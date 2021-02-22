@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth.models import User
 from rest_framework import routers, serializers, viewsets
+
 from main import views
 
 router = routers.DefaultRouter()
@@ -28,3 +29,19 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
+
+# Function based view
+function_view = [
+    path('api/hello-world', views.hello_world),
+    path('api/hello-world-2', views.HelloWorld2.as_view()),
+]
+urlpatterns += function_view
+
+# API account url
+api_account = [
+    path('api/account/login', views.LoginView.as_view()),
+    path('api/account/logout', views.LogoutView.as_view()),
+    path('api/account/create', views.RegisterView.as_view()),
+]
+urlpatterns += api_account
+
