@@ -1,10 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, User
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.utils import timezone
-
-
 
 # Create your models here.
 class Question(models.Model):
@@ -20,7 +16,7 @@ class Question(models.Model):
         choices=DIFFICULTY_CHOICES,
     )
 
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="question_world_fk")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="question_user_fk")
     time_created = models.DateTimeField(auto_now=True)
 
     # Object name for display in admin panel
@@ -29,7 +25,7 @@ class Question(models.Model):
 
 
 class Answer(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="question_fk")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answer_question_fk")
     answer = models.CharField(max_length=256)
     is_correct = models.BooleanField(default=False)
 
@@ -39,3 +35,33 @@ class Answer(models.Model):
             return "Correct"
         else:
             return "Incorrect"
+
+class QuestionRecord(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questionrecord_user_fk")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="questionrecord_question_fk")
+    score_change = models.IntegerField()
+    reason = models.CharField(max_length=256)
+    time = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "%s|%s|%s" % (self.user.first_name, self.question.question, self.score_change)
+
+class UserWorldProgressRecord(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="userworldprogressrecord_user_fk")
+    world = models.ForeignKey(World, on_delete=models.SET_NULL, related_name="userworldprogressrecord_world_fk")
+    is_completed = models.BooleanField(default=False)
+    started_time = models.DateTimeField(auto_now=True)
+    completed_time = models.DateTimeField(auto_now=False)
+
+    def __str__(self):
+        return "%s|%s|%s" % (self.user.first_name, self.world.world_name, self.is_completed)
+
+class UserLevelProgressRecord(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="userlevelprogressrecord_user_fk")
+    level = models.ForeignKey(Level, on_delete=models.SET_NULL, related_name="userlevelprogressrecord_level_fk")
+    is_completed = models.BooleanField(default=False)
+    started_time = models.DateTimeField(auto_now=True)
+    completed_time = models.DateTimeField(auto_now=False)
+
+    def __str__(self):
+        return "%s|%s|%s" % (self.user.first_name, self.level.level_name, self.is_completed)
