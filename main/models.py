@@ -36,6 +36,66 @@ class Answer(models.Model):
         else:
             return "Incorrect"
 
+class World(models.Model):
+    world_name = models.CharField(max_length=64)
+    topic = models.CharField(max_length=64)
+    is_custom_world = models.BooleanField(default=False)
+    index = models.IntegerField(max_length=10, unique=True)
+
+    # Object name for display in admin panel
+    def __str__(self):
+        return "%s|%s" % (self.world_name, self.topic)
+
+class CustomWorld(models.Model):
+    world_id = models.ForeignKey(World, on_delete=models.CASCADE, related_name="world_fk")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_fk")
+    access_code = models.IntegerField(max_length=10)
+    is_active = models.IntegerField(max_length=10)
+    created_date = models.IntegerField(max_length=10)
+
+    # Object name for display in admin panel
+    def __str__(self):
+        return "%s|%s" % (self.world_id, self.created_by)
+
+
+class Assignment(models.Model):
+    custom_world = models.ForeignKey(CustomWorld, on_delete=models.CASCADE, related_name="custom_world_fk")
+    class_index = models.CharField(max_length=30)
+    name = models.CharField(max_length=30)
+    deadline = models.DateTimeField(auto_now=True)
+
+    # Object name for display in admin panel
+    def __str__(self):
+        return "%s|%s" % (self.custom_world, self.class_index)
+
+
+class Section(models.Model):
+    world_id = models.ForeignKey(World, on_delete=models.CASCADE, related_name="world_fk")
+    sub_topic_name = models.CharField(max_length=30)
+
+    # Object name for display in admin panel
+    def __str__(self):
+         return "%s|%s" % (self.world_id, self.sub_topic_name)
+
+class Level(models.Model):
+    section_id = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="section_fk")
+    level_name = models.CharField(max_length=64)
+    is_boss_level=models.BooleanField(default=False)
+    is_final_boss_level=models.BooleanField(default=False)
+    is_start_node=models.BooleanField(default=False)
+
+    # Object name for display in admin panel
+    def __str__(self):
+        return "%s|%s" % (self.section_id, self.level_name)
+
+class LevelPath(models.Model):
+    from_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="level_fk")
+    to_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="level_fk")
+
+    def __str__(self):
+        return "%s|%s" % (self.from_level, self.to_level)
+
+
 class QuestionRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questionrecord_user_fk")
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="questionrecord_question_fk")
