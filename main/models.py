@@ -2,7 +2,6 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 from django.utils import timezone
 
-
 # Create your models here.
 class Question(models.Model):
     question = models.TextField(max_length=1000)
@@ -36,20 +35,6 @@ class Answer(models.Model):
             return "Correct"
         else:
             return "Incorrect"
-
-class User(models.Model):
-    first_name = models.CharField(max_length=256)
-    last_name = models.CharField(max_length=256)
-    username = models.CharField(max_length=256)
-    email = models.EmailField(max_length=254)
-    password = models.CharField(max_length=256)
-    is_superuser = models.BooleanField()
-    is_teacher = models.BooleanField()
-    is_active = models.BooleanField()
-    date_joined = models.DateField(auto_now=True)
-
-    def __str__(self):
-        return self.first_name + " " + self.last_name
 
 class QuestionRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questionrecord_user_fk")
