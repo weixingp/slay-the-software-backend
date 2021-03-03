@@ -18,7 +18,7 @@ class World(models.Model):
 
 
 class Section(models.Model):
-    world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="section_world_fk")
+    world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="sections")
     sub_topic_name = models.CharField(max_length=30)
     index = models.IntegerField(unique=True)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -31,7 +31,7 @@ class Section(models.Model):
 
 class Question(models.Model):
     question = models.TextField(max_length=1000)
-    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="question_world_fk")
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="questions")
     DIFFICULTY_CHOICES = (
         ("1", "Easy"),
         ("2", "Normal"),
@@ -42,7 +42,7 @@ class Question(models.Model):
         choices=DIFFICULTY_CHOICES,
     )
 
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="question_user_fk")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_questions")
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
@@ -52,7 +52,7 @@ class Question(models.Model):
 
 
 class Answer(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answer_question_fk")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answers")
     answer = models.CharField(max_length=256)
     is_correct = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -93,7 +93,7 @@ class Assignment(models.Model):
 
 
 class Level(models.Model):
-    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="level_section_fk")
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="levels")
     level_name = models.CharField(max_length=64)
     is_boss_level = models.BooleanField(default=False)
     is_final_boss_level = models.BooleanField(default=False)
