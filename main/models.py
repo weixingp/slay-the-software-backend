@@ -9,6 +9,8 @@ class World(models.Model):
     topic = models.CharField(max_length=64)
     is_custom_world = models.BooleanField(default=False)
     index = models.IntegerField(unique=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
 
     # Object name for display in admin panel
     def __str__(self):
@@ -18,6 +20,8 @@ class World(models.Model):
 class Section(models.Model):
     world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="section_world_fk")
     sub_topic_name = models.CharField(max_length=30)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
 
     # Object name for display in admin panel
     def __str__(self):
@@ -38,7 +42,8 @@ class Question(models.Model):
     )
 
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="question_user_fk")
-    time_created = models.DateTimeField(auto_now=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
 
     # Object name for display in admin panel
     def __str__(self):
@@ -49,6 +54,8 @@ class Answer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answer_question_fk")
     answer = models.CharField(max_length=256)
     is_correct = models.BooleanField(default=False)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
 
     # Object name for display in admin panel
     def __str__(self):
@@ -61,9 +68,10 @@ class Answer(models.Model):
 class CustomWorld(models.Model):
     world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="custom_world_world_fk")
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="custom_world_user_fk")
-    access_code = models.IntegerField()
+    access_code = models.CharField(max_length=256) # to change max length after format has been decided
     is_active = models.IntegerField()
-    created_date = models.IntegerField()
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
 
     # Object name for display in admin panel
     def __str__(self):
@@ -74,7 +82,9 @@ class Assignment(models.Model):
     custom_world = models.ForeignKey(CustomWorld, on_delete=models.CASCADE, related_name="assignment_custom_world_fk")
     class_index = models.CharField(max_length=30)
     name = models.CharField(max_length=30)
-    deadline = models.DateTimeField(auto_now=True)
+    deadline = models.DateTimeField(auto_now=False)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
 
     # Object name for display in admin panel
     def __str__(self):
@@ -87,6 +97,8 @@ class Level(models.Model):
     is_boss_level = models.BooleanField(default=False)
     is_final_boss_level = models.BooleanField(default=False)
     is_start_node = models.BooleanField(default=False)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
 
     # Object name for display in admin panel
     def __str__(self):
@@ -96,6 +108,8 @@ class Level(models.Model):
 class LevelPath(models.Model):
     from_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="levelpath_fromlevel_fk")
     to_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="levelpath_tolevel_fk")
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return "%s|%s" % (self.from_level, self.to_level)
@@ -106,7 +120,8 @@ class QuestionRecord(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="questionrecord_question_fk")
     score_change = models.IntegerField()
     reason = models.CharField(max_length=256)
-    time = models.DateTimeField(auto_now=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return "%s|%s|%s" % (self.user.first_name, self.question.question, self.score_change)
@@ -116,7 +131,7 @@ class UserWorldProgressRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="userworldprogressrecord_user_fk")
     world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="userworldprogressrecord_world_fk")
     is_completed = models.BooleanField(default=False)
-    started_time = models.DateTimeField(auto_now=True)
+    started_time = models.DateTimeField(auto_now_add=True)
     completed_time = models.DateTimeField(auto_now=False)
 
     def __str__(self):
@@ -127,8 +142,9 @@ class UserLevelProgressRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="userlevelprogressrecord_user_fk")
     level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="userlevelprogressrecord_level_fk")
     is_completed = models.BooleanField(default=False)
-    started_time = models.DateTimeField(auto_now=True)
+    started_time = models.DateTimeField(auto_now_add=True)
     completed_time = models.DateTimeField(auto_now=False)
+    points_gained = models.IntegerField()
 
     def __str__(self):
         return "%s|%s|%s" % (self.user.first_name, self.level.level_name, self.is_completed)
