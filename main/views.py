@@ -11,8 +11,10 @@ from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
+from .models import *
+from django.db.models import Sum
 
-from main.serializers import UserSerializer, GroupSerializer, LoginSerializer
+from main.serializers import *
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -95,6 +97,31 @@ class UserView(RetrieveAPIView):
     def get_object(self, *args, **kwargs):
         return self.request.user
 
+# not tested yet
+class LeaderboardView(APIView):
+
+    def get(self, request):
+        if (request.world_id): # get leaderboard of a particular world
+            sections = Section.objects.filter(world_id = request.world_id) # get sections in the world
+            section_ids = [section.id for section in sections] # extract section ids
+            level_ids = []
+            for section_id in section_ids:
+                levels = Level.objects.filter(section_id=section_id)  # get levels in the section
+                level_ids += [level.id for level in levels] # extract level ids
+            student_records = UserLevelProgressRecord.objects.get(level_id__in=level_ids) # extract level records which fall in level_ids
+        else: # get overall leaderboard
+            student_records = UserLevelProgressRecord.objects.all()
+
+        # sum up points for each student
+        student_points = student_records.values('user_id').sum(points=Sum('points_gained'))
+
+        if request.offset:
+            student_points = student_points[request.offset:]
+        if request.limit:
+            student_points = student_points[:request.limit]
+
+        serializer = LeaderboardSerializer(data=student_points)
+        return Response(serializer.data)
 
 class QuestionView(APIView):
     def get(self, request):

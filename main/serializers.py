@@ -82,3 +82,7 @@ class GetQuestionByLevelIDSerializer(serializers.Serializer):
 
     def get_answers(self):
         raise serializers.Rel
+
+class LeaderboardSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    points = serializers.IntegerField()

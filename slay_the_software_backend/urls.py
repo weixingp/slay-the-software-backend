@@ -19,6 +19,7 @@ from django.contrib.auth.models import User
 from rest_framework import routers, serializers, viewsets
 
 from main import views
+from main.urls import urlpatterns as main_urls
 
 router = routers.DefaultRouter()
 router.register(r'users', views.UserViewSet)
@@ -44,4 +45,4 @@ api_account = [
     path('api/account/create', views.RegisterView.as_view()),
 ]
 urlpatterns += api_account
-
+urlpatterns += main_urls
