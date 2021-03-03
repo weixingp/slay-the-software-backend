@@ -4,7 +4,7 @@ from django.shortcuts import render
 from pytz import unicode
 from rest_framework import viewsets, authentication, exceptions
 from django.contrib.auth.models import User, Group
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
 from rest_framework.decorators import api_view
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
@@ -97,11 +97,12 @@ class UserView(RetrieveAPIView):
     def get_object(self, *args, **kwargs):
         return self.request.user
 
+
 # not tested yet
 class LeaderboardView(APIView):
 
     def get(self, request):
-        if (request.world_id): # get leaderboard of a particular world
+        if request.world_id: # get leaderboard of a particular world
             sections = Section.objects.filter(world_id = request.world_id) # get sections in the world
             section_ids = [section.id for section in sections] # extract section ids
             level_ids = []
@@ -123,9 +124,28 @@ class LeaderboardView(APIView):
         serializer = LeaderboardSerializer(data=student_points)
         return Response(serializer.data)
 
+
+class WorldView(APIView):
+
+    def get_object(self, id):
+        try:
+            return World.objects.get(id=id)
+        except World.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request):
+        worlds = World.objects.all()
+        serializer = WorldSerializer(worlds)
+        return Response(serializer.data)
+
+    # not sure if overloading works
+    def get(self, request, id):
+        world = self.get_object(id)
+        serializer = WorldSerializer(world)
+        return Response(serializer.data)
+
 class QuestionView(APIView):
     def get(self, request):
         user = request.user
-        
 
         return Response({"success": True, "user_id": user.id})

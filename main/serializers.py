@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
 
-from main.models import Question, Answer
+from main.models import *
 from main.validators import validate_username
 
 
@@ -83,6 +83,30 @@ class GetQuestionByLevelIDSerializer(serializers.Serializer):
     def get_answers(self):
         raise serializers.Rel
 
+
 class LeaderboardSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()
     points = serializers.IntegerField()
+
+
+class LevelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Level
+        fields = '__all__'
+
+
+class SectionSerializer(serializers.ModelSerializer):
+    levels = LevelSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Section
+        fields = '__all__'
+
+
+class WorldSerializer(serializers.ModelSerializer):
+    sections = SectionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = World
+        fields = '__all__'
+
