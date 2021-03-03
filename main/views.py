@@ -72,9 +72,10 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
-    def post(self, request):
+    def get(self, request):
+        user = request.user
         logout(request)
-        return Response()
+        return Response({"success": True, "user_id": user.id})
 
 
 class RegisterView(CreateAPIView):

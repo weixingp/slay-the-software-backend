@@ -15,9 +15,18 @@ class World(models.Model):
         return "%s|%s" % (self.world_name, self.topic)
 
 
+class Section(models.Model):
+    world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="section_world_fk")
+    sub_topic_name = models.CharField(max_length=30)
+
+    # Object name for display in admin panel
+    def __str__(self):
+        return "%s|%s" % (self.world_id, self.sub_topic_name)
+
+
 class Question(models.Model):
     question = models.TextField(max_length=1000)
-    world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="question_world_fk")
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="question_world_fk")
     DIFFICULTY_CHOICES = (
         ("1", "Easy"),
         ("2", "Normal"),
@@ -70,15 +79,6 @@ class Assignment(models.Model):
     # Object name for display in admin panel
     def __str__(self):
         return "%s|%s" % (self.custom_world, self.class_index)
-
-
-class Section(models.Model):
-    world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="section_world_fk")
-    sub_topic_name = models.CharField(max_length=30)
-
-    # Object name for display in admin panel
-    def __str__(self):
-        return "%s|%s" % (self.world_id, self.sub_topic_name)
 
 
 class Level(models.Model):
