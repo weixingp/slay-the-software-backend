@@ -4,9 +4,20 @@ from django.utils import timezone
 
 
 # Create your models here.
+class World(models.Model):
+    world_name = models.CharField(max_length=64)
+    topic = models.CharField(max_length=64)
+    is_custom_world = models.BooleanField(default=False)
+    index = models.IntegerField(unique=True)
+
+    # Object name for display in admin panel
+    def __str__(self):
+        return "%s|%s" % (self.world_name, self.topic)
+
+
 class Question(models.Model):
     question = models.TextField(max_length=1000)
-    # world_id = models.ForeignKey(World, on_delete=models.CASCADE, related_name="question_world_fk")
+    world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="question_world_fk")
     DIFFICULTY_CHOICES = (
         ("1", "Easy"),
         ("2", "Normal"),
@@ -38,23 +49,12 @@ class Answer(models.Model):
             return "Incorrect"
 
 
-class World(models.Model):
-    world_name = models.CharField(max_length=64)
-    topic = models.CharField(max_length=64)
-    is_custom_world = models.BooleanField(default=False)
-    index = models.IntegerField(max_length=10, unique=True)
-
-    # Object name for display in admin panel
-    def __str__(self):
-        return "%s|%s" % (self.world_name, self.topic)
-
-
 class CustomWorld(models.Model):
-    world_id = models.ForeignKey(World, on_delete=models.CASCADE, related_name="world_fk")
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_fk")
-    access_code = models.IntegerField(max_length=10)
-    is_active = models.IntegerField(max_length=10)
-    created_date = models.IntegerField(max_length=10)
+    world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="custom_world_world_fk")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="custom_world_user_fk")
+    access_code = models.IntegerField()
+    is_active = models.IntegerField()
+    created_date = models.IntegerField()
 
     # Object name for display in admin panel
     def __str__(self):
@@ -62,7 +62,7 @@ class CustomWorld(models.Model):
 
 
 class Assignment(models.Model):
-    custom_world = models.ForeignKey(CustomWorld, on_delete=models.CASCADE, related_name="custom_world_fk")
+    custom_world = models.ForeignKey(CustomWorld, on_delete=models.CASCADE, related_name="assignment_custom_world_fk")
     class_index = models.CharField(max_length=30)
     name = models.CharField(max_length=30)
     deadline = models.DateTimeField(auto_now=True)
@@ -73,7 +73,7 @@ class Assignment(models.Model):
 
 
 class Section(models.Model):
-    world_id = models.ForeignKey(World, on_delete=models.CASCADE, related_name="world_fk")
+    world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="section_world_fk")
     sub_topic_name = models.CharField(max_length=30)
 
     # Object name for display in admin panel
@@ -82,7 +82,7 @@ class Section(models.Model):
 
 
 class Level(models.Model):
-    section_id = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="section_fk")
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="level_section_fk")
     level_name = models.CharField(max_length=64)
     is_boss_level = models.BooleanField(default=False)
     is_final_boss_level = models.BooleanField(default=False)
@@ -94,8 +94,8 @@ class Level(models.Model):
 
 
 class LevelPath(models.Model):
-    from_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="level_fk")
-    to_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="level_fk")
+    from_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="levelpath_fromlevel_fk")
+    to_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="levelpath_tolevel_fk")
 
     def __str__(self):
         return "%s|%s" % (self.from_level, self.to_level)
@@ -114,7 +114,7 @@ class QuestionRecord(models.Model):
 
 class UserWorldProgressRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="userworldprogressrecord_user_fk")
-    world = models.ForeignKey(World, on_delete=models.SET_NULL, related_name="userworldprogressrecord_world_fk")
+    world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="userworldprogressrecord_world_fk")
     is_completed = models.BooleanField(default=False)
     started_time = models.DateTimeField(auto_now=True)
     completed_time = models.DateTimeField(auto_now=False)
@@ -125,7 +125,7 @@ class UserWorldProgressRecord(models.Model):
 
 class UserLevelProgressRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="userlevelprogressrecord_user_fk")
-    level = models.ForeignKey(Level, on_delete=models.SET_NULL, related_name="userlevelprogressrecord_level_fk")
+    level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="userlevelprogressrecord_level_fk")
     is_completed = models.BooleanField(default=False)
     started_time = models.DateTimeField(auto_now=True)
     completed_time = models.DateTimeField(auto_now=False)
