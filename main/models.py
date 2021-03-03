@@ -115,16 +115,16 @@ class LevelPath(models.Model):
         return "%s|%s" % (self.from_level, self.to_level)
 
 
-class QuestionRecord(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questionrecord_user_fk")
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="questionrecord_question_fk")
-    score_change = models.IntegerField()
-    reason = models.CharField(max_length=256)
-    date_created = models.DateTimeField(auto_now_add=True)
-    date_modified = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return "%s|%s|%s" % (self.user.first_name, self.question.question, self.score_change)
+# Points system migrated to UserLevelProgressRecord
+# class QuestionRecord(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questionrecord_user_fk")
+#     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="questionrecord_question_fk")
+#     score_change = models.IntegerField()
+#     reason = models.CharField(max_length=256)
+#     time = models.DateTimeField(auto_now=True)
+#
+#     def __str__(self):
+#         return "%s|%s|%s" % (self.user.first_name, self.question.question, self.score_change)
 
 
 class UserWorldProgressRecord(models.Model):
@@ -141,6 +141,8 @@ class UserWorldProgressRecord(models.Model):
 class UserLevelProgressRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="userlevelprogressrecord_user_fk")
     level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="userlevelprogressrecord_level_fk")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="userlevelprogressrecord_question_fk")
+    points_gained = models.IntegerField(default=0)
     is_completed = models.BooleanField(default=False)
     started_time = models.DateTimeField(auto_now_add=True)
     completed_time = models.DateTimeField(auto_now=False)
