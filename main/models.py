@@ -117,15 +117,17 @@ class Level(models.Model):
 
 
 # Points system migrated to UserLevelProgressRecord
-# class QuestionRecord(models.Model):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questionrecord_user_fk")
-#     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="questionrecord_question_fk")
-#     score_change = models.IntegerField()
-#     reason = models.CharField(max_length=256)
-#     time = models.DateTimeField(auto_now=True)
-#
-#     def __str__(self):
-#         return "%s|%s|%s" % (self.user.first_name, self.question.question, self.score_change)
+class QuestionRecord(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questionrecord_user_fk")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="questionrecord_question_fk")
+    level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="questionrecord_level_fk")
+    is_correct = models.BooleanField()
+    points_change = models.IntegerField(default=0)
+    reason = models.CharField(max_length=256)
+    time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return "%s|%s|%s" % (self.user.first_name, self.question.question, self.points_change)
 
 
 class UserWorldProgressRecord(models.Model):
@@ -150,7 +152,6 @@ class UserLevelProgressRecord(models.Model):
         related_name="userlevelprogressrecord_question_fk",
         null=True
     )
-    points_gained = models.IntegerField(default=0)
     is_completed = models.BooleanField(default=False)
     started_time = models.DateTimeField(auto_now_add=True)
     completed_time = models.DateTimeField(null=True, blank=True)
