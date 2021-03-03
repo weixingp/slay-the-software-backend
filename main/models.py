@@ -132,7 +132,7 @@ class UserWorldProgressRecord(models.Model):
     world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="userworldprogressrecord_world_fk")
     is_completed = models.BooleanField(default=False)
     started_time = models.DateTimeField(auto_now_add=True)
-    completed_time = models.DateTimeField(auto_now=False)
+    completed_time = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return "%s|%s|%s" % (self.user.first_name, self.world.world_name, self.is_completed)
@@ -145,8 +145,7 @@ class UserLevelProgressRecord(models.Model):
     points_gained = models.IntegerField(default=0)
     is_completed = models.BooleanField(default=False)
     started_time = models.DateTimeField(auto_now_add=True)
-    completed_time = models.DateTimeField(auto_now=False)
-    points_gained = models.IntegerField()
+    completed_time = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return "%s|%s|%s" % (self.user.first_name, self.level.level_name, self.is_completed)

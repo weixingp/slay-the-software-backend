@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User, Group
 from rest_framework import serializers
 
+from main.models import Question, Answer
 from main.validators import validate_username
 
 
@@ -30,7 +31,6 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
         fields = (
@@ -56,7 +56,29 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(
-                    validated_data.pop('email'),
-                    validated_data.pop('password'),
-                    **validated_data
-                )
+            validated_data.pop('email'),
+            validated_data.pop('password'),
+            **validated_data
+        )
+
+
+class QuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question
+        fields = '__all__'
+
+
+class AnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Answer
+        fields = '__all__'
+
+
+class GetQuestionByLevelIDSerializer(serializers.Serializer):
+    level_id = serializers.IntegerField()
+
+    def get_question(self):
+        pass
+
+    def get_answers(self):
+        raise serializers.Rel

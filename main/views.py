@@ -94,3 +94,11 @@ class UserView(RetrieveAPIView):
 
     def get_object(self, *args, **kwargs):
         return self.request.user
+
+
+class QuestionView(APIView):
+    def get(self, request):
+        user = request.user
+        
+
+        return Response({"success": True, "user_id": user.id})
