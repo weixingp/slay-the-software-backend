@@ -20,6 +20,7 @@ class World(models.Model):
 class Section(models.Model):
     world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="section_world_fk")
     sub_topic_name = models.CharField(max_length=30)
+    index = models.IntegerField(unique=True)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
@@ -96,7 +97,7 @@ class Level(models.Model):
     level_name = models.CharField(max_length=64)
     is_boss_level = models.BooleanField(default=False)
     is_final_boss_level = models.BooleanField(default=False)
-    is_start_node = models.BooleanField(default=False)
+    index = models.IntegerField(unique=True)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
@@ -134,6 +135,8 @@ class UserWorldProgressRecord(models.Model):
     started_time = models.DateTimeField(auto_now_add=True)
     completed_time = models.DateTimeField(null=True, blank=True)
 
+    unique_together = [['user', 'world']]
+
     def __str__(self):
         return "%s|%s|%s" % (self.user.first_name, self.world.world_name, self.is_completed)
 
@@ -141,7 +144,12 @@ class UserWorldProgressRecord(models.Model):
 class UserLevelProgressRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="userlevelprogressrecord_user_fk")
     level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="userlevelprogressrecord_level_fk")
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="userlevelprogressrecord_question_fk")
+    question = models.ForeignKey(
+        Question,
+        on_delete=models.CASCADE,
+        related_name="userlevelprogressrecord_question_fk",
+        null=True
+    )
     points_gained = models.IntegerField(default=0)
     is_completed = models.BooleanField(default=False)
     started_time = models.DateTimeField(auto_now_add=True)
