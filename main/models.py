@@ -106,14 +106,14 @@ class Level(models.Model):
         return "%s|%s" % (self.section_id, self.level_name)
 
 
-class LevelPath(models.Model):
-    from_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="levelpath_fromlevel_fk")
-    to_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="levelpath_tolevel_fk")
-    date_created = models.DateTimeField(auto_now_add=True)
-    date_modified = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return "%s|%s" % (self.from_level, self.to_level)
+# class LevelPath(models.Model):
+#     from_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="levelpath_fromlevel_fk")
+#     to_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="levelpath_tolevel_fk")
+#     date_created = models.DateTimeField(auto_now_add=True)
+#     date_modified = models.DateTimeField(auto_now=True)
+#
+#     def __str__(self):
+#         return "%s|%s" % (self.from_level, self.to_level)
 
 
 # Points system migrated to UserLevelProgressRecord
@@ -146,7 +146,7 @@ class UserLevelProgressRecord(models.Model):
     level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="userlevelprogressrecord_level_fk")
     question = models.ForeignKey(
         Question,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="userlevelprogressrecord_question_fk",
         null=True
     )
