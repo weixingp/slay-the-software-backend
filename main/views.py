@@ -109,19 +109,19 @@ class LeaderboardView(APIView):
             for section_id in section_ids:
                 levels = Level.objects.filter(section_id=section_id)  # get levels in the section
                 level_ids += [level.id for level in levels] # extract level ids
-            student_records = UserLevelProgressRecord.objects.get(level_id__in=level_ids) # extract level records which fall in level_ids
+            student_records = QuestionRecord.objects.get(level_id__in=level_ids) # extract level records which fall in level_ids
         else: # get overall leaderboard
-            student_records = UserLevelProgressRecord.objects.all()
+            student_records = QuestionRecord.objects.all()
 
-        # sum up points for each student
-        student_points = student_records.values('user_id').sum(points=Sum('points_gained'))
+        # sum up points for each student and sort in desc order
+        student_points = student_records.values('user_id').annotate(points=Sum('points_gained')).order_by('points').reverse()
 
         if request.offset:
             student_points = student_points[request.offset:]
         if request.limit:
             student_points = student_points[:request.limit]
 
-        serializer = LeaderboardSerializer(data=student_points)
+        serializer = LeaderboardSerializer(data=student_points, many=True)
         return Response(serializer.data)
 
 
