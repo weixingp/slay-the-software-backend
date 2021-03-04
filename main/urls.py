@@ -10,8 +10,9 @@ urlpatterns= [
 ]
 
 question_urls = [
-    path('api/question/mainworld', QuestionView.as_view()).
-    path('api/questions/', CreateQuestionView.as_view()),
+    path('api/question/mainworld', QuestionView.as_view()),
+    path('api/questions/create/', CreateQuestionView.as_view()),
+    path('api/questions/<int:pk>/', QuestionListView.as_view()),
 ]
 
 urlpatterns += question_urls

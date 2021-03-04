@@ -133,7 +133,6 @@ class QuestionRecordSerializer(serializers.ModelSerializer):
         model = QuestionRecord
         fields = '__all__'
 
-#how to add section and created_by?
 class CreateQuestionSerializer(serializers.ModelSerializer):
     answers = AnswerSerializer(many=True)
     section = serializers.CharField(required=False)
