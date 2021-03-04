@@ -154,3 +154,12 @@ class CustomWorldSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomWorld
         fields = '__all__'
+
+
+# KIV if needed
+class AssignmentSerializer(serializers.ModelSerializer):
+    custom_world = CustomWorldSerializer()
+
+    class Meta:
+        model = Assignment
+        fields = '__all__'
