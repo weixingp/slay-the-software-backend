@@ -67,12 +67,16 @@ class QuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = '__all__'
 
-
+"""
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
         fields = '__all__'
-
+"""
+class AnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Answer
+        fields = ['answer', 'is_correct']
 
 class GetQuestionByLevelIDSerializer(serializers.Serializer):
     level_id = serializers.IntegerField()
@@ -110,3 +114,17 @@ class WorldSerializer(serializers.ModelSerializer):
         model = World
         fields = '__all__'
 
+#how to add section and created_by?
+class CreateQuestionSerializer(serializers.ModelSerializer):
+    answers = AnswerSerializer(many=True)
+
+    class Meta:
+        model = Question
+        fields = ['question', 'difficulty', 'answers']
+
+    def create(self, validated_data):
+        answers_data = validated_data.pop('answers')
+        question = Question.objects.create(**validated_data)
+        for answer_data in answers_data:
+            Answer.objects.create(question=question, **answer_data)
+        return question

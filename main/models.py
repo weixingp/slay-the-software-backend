@@ -31,7 +31,7 @@ class Section(models.Model):
 
 class Question(models.Model):
     question = models.TextField(max_length=1000)
-    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="questions")
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="questions", blank=True, null=True)
     DIFFICULTY_CHOICES = (
         ("1", "Easy"),
         ("2", "Normal"),
@@ -42,7 +42,7 @@ class Question(models.Model):
         choices=DIFFICULTY_CHOICES,
     )
 
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_questions")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_questions", blank=True, null=True)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
