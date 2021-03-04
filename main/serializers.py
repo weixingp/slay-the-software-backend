@@ -1,9 +1,11 @@
-from abc import ABC
-
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User, Group
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
+from rest_framework.exceptions import NotFound, PermissionDenied
 
+from main.GameManager import GameManager
+from main.models import Question, Answer, Section, Level
 from main.models import *
 from main.validators import validate_username
 
@@ -74,25 +76,40 @@ class AnswerSerializer(serializers.ModelSerializer):
         model = Answer
         fields = '__all__'
 
-class GetQuestionByLevelIDSerializer(serializers.Serializer):
-    level_id = serializers.IntegerField()
-
-    def get_question(self):
-        pass
-
-    def get_answers(self):
-        raise serializers.Rel
-
-
-class LeaderboardSerializer(serializers.Serializer):
-    user_id = serializers.IntegerField()
-    points = serializers.IntegerField()
+class AnswerWithoutCorrectShownSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Answer
+        fields = ['id', 'answer']
 
 
 class LevelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Level
         fields = '__all__'
+
+
+class GetQuestionByLevelIDSerializer(serializers.Serializer):
+    level_id = serializers.IntegerField()
+
+    def validate(self, attrs):
+        level_id = attrs['level_id']
+        try:
+            level = Level.objects.get(id=level_id)
+        except ObjectDoesNotExist:
+            raise NotFound(detail="Level ID not found.")
+
+        return {"level": level}
+
+
+class QuestionAnswerSerializer(serializers.Serializer):
+    question = QuestionSerializer()
+    answers = AnswerWithoutCorrectShownSerializer(many=True)
+
+
+
+class LeaderboardSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    points = serializers.IntegerField()
 
 
 class SectionSerializer(serializers.ModelSerializer):
@@ -108,6 +125,12 @@ class WorldSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = World
+        fields = '__all__'
+
+
+class QuestionRecordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuestionRecord
         fields = '__all__'
 
 #how to add section and created_by?

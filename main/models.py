@@ -121,10 +121,12 @@ class QuestionRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questionrecord_user_fk")
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="questionrecord_question_fk")
     level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="questionrecord_level_fk")
-    is_correct = models.BooleanField()
+    is_correct = models.BooleanField(null=True, blank=True)
     points_change = models.IntegerField(default=0)
-    reason = models.CharField(max_length=256)
+    reason = models.CharField(max_length=256, null=True, blank=True)
     time = models.DateTimeField(auto_now_add=True)
+    is_completed = models.BooleanField(default=False)
+    completed_time = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return "%s|%s|%s" % (self.user.first_name, self.question.question, self.points_change)
@@ -155,6 +157,8 @@ class UserLevelProgressRecord(models.Model):
     is_completed = models.BooleanField(default=False)
     started_time = models.DateTimeField(auto_now_add=True)
     completed_time = models.DateTimeField(null=True, blank=True)
+
+    unique_together = [['user', 'level']]
 
     def __str__(self):
         return "%s|%s|%s" % (self.user.first_name, self.level.level_name, self.is_completed)

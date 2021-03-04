@@ -6,3 +6,9 @@ urlpatterns= [
     path('worlds/', WorldView.as_view()),
     path('worlds/<int:id>/', WorldView.as_view()),
 ]
+
+question_urls = [
+    path('api/question/mainworld', QuestionView.as_view())
+]
+
+urlpatterns += question_urls

@@ -1,3 +1,5 @@
+import json
+
 from django.conf.global_settings import AUTHENTICATION_BACKENDS
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.shortcuts import render
@@ -139,16 +141,28 @@ class WorldView(APIView):
         return Response(serializer.data)
 
     # not sure if overloading works
+    # doesn't work
     def get(self, request, id):
         world = self.get_object(id)
         serializer = WorldSerializer(world)
         return Response(serializer.data)
 
+
 class QuestionView(APIView):
     def get(self, request):
         user = request.user
 
-        return Response({"success": True, "user_id": user.id})
+        gm = GameManager(user)
+        question, answers, record = gm.get_question_answer_in_main_world()
+        question_serializer = QuestionSerializer(question)
+        answers_serializer = AnswerWithoutCorrectShownSerializer(answers, many=True)
+        # question_record_serializer = QuestionRecordSerializer(record)
+        res = {
+            "question": question_serializer.data['question'],
+            "answers": answers_serializer.data,
+            "record_id": record.id
+        }
+        return Response(res)
 
 class CreateQuestionView(APIView):
 
