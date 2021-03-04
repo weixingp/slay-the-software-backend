@@ -66,11 +66,10 @@ class Answer(models.Model):
             return "Incorrect"
 
 
-class CustomWorld(models.Model):
-    world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="custom_world_world_fk")
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="custom_world_user_fk")
+class CustomWorld(World):
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="custom_worlds")
     access_code = models.CharField(max_length=256) # to change max length after format has been decided
-    is_active = models.IntegerField()
+    is_active = models.BooleanField()
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
@@ -80,7 +79,7 @@ class CustomWorld(models.Model):
 
 
 class Assignment(models.Model):
-    custom_world = models.ForeignKey(CustomWorld, on_delete=models.CASCADE, related_name="assignment_custom_world_fk")
+    custom_world = models.OneToOneField(CustomWorld, on_delete=models.CASCADE, primary_key=True)
     class_index = models.CharField(max_length=30)
     name = models.CharField(max_length=30)
     deadline = models.DateTimeField(auto_now=False)

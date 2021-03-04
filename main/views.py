@@ -129,19 +129,19 @@ class LeaderboardView(APIView):
 
 class WorldView(APIView):
 
+    def get(self, request):
+        worlds = World.objects.all()
+        serializer = WorldSerializer(worlds)
+        return Response(serializer.data)
+
+class WorldDetails(APIView):
+
     def get_object(self, id):
         try:
             return World.objects.get(id=id)
         except World.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def get(self, request):
-        worlds = World.objects.all()
-        serializer = WorldSerializer(worlds)
-        return Response(serializer.data)
-
-    # not sure if overloading works
-    # doesn't work
     def get(self, request, id):
         world = self.get_object(id)
         serializer = WorldSerializer(world)
@@ -172,3 +172,48 @@ class CreateQuestionView(APIView):
             serializer.save(created_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CustomWorldView(APIView):
+
+    def get(self, request):
+        user = User.objects.get(id=request.user.id)
+        user_custom_worlds = CustomWorld.objects.filter(created_by=user)
+        serializer = CustomWorldSerializer(user_custom_worlds)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = CustomWorldSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CustomWorldDetails(APIView):
+
+    def get_object(self, access_code):
+        try:
+            return CustomWorld.objects.get(access_code=access_code)
+        except CustomWorld.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, access_code):
+        custom_world = self.get_object(access_code)
+        serializer = CustomWorldSerializer(custom_world)
+        return Response(serializer.data)
+
+    def put(self, request, access_code):
+        custom_world = self.get_object(access_code)
+        serializer = CustomWorldSerializer(custom_world, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, access_code):
+        custom_world = self.get_object(access_code)
+        custom_world.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
