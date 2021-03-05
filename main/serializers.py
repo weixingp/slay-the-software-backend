@@ -133,6 +133,19 @@ class QuestionRecordSerializer(serializers.ModelSerializer):
         model = QuestionRecord
         fields = '__all__'
 
+
+class CheckAnswerSerializer(serializers.Serializer):
+    answer_id = serializers.CharField()
+
+    def validate(self, attrs):
+        answer_id = attrs['answer_id']
+        try:
+            answer = Answer.objects.get(id=answer_id)
+        except ObjectDoesNotExist:
+            raise NotFound(detail="Answer not found.")
+
+        return {"answer": answer}
+
 #how to add section and created_by?
 class CreateQuestionSerializer(serializers.ModelSerializer):
     answers = AnswerSerializer(many=True)

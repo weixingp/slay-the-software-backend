@@ -1,45 +1,95 @@
 from random import randint
 
-from rest_framework.exceptions import PermissionDenied
+from django.utils.timezone import now
+from rest_framework.exceptions import PermissionDenied, NotFound
 
 from main.models import UserLevelProgressRecord, UserWorldProgressRecord, World, Level, Section, Question, \
     QuestionRecord, Answer
 
 
 class GameManager:
+    difficulty_points_map = {  # Getting correct answer
+        True: {
+            "1": 1,
+            "2": 2,
+            "3": 3,
+        },
+        False: {  # Getting wrong answer
+            "1": -0.5,
+            "2": -1,
+            "3": -2,
+        }
+
+    }
+
     def __init__(self, user):
         self.user = user
 
     # Should change it for custom map
     def get_user_position_in_map(self):
-        position = UserWorldProgressRecord.objects.filter(user=self.user, is_completed=False)
+        pass
+        # position = UserWorldProgressRecord.objects.filter(user=self.user, is_completed=False)
+        #
+        # # Instantiate the user position to the first world
+        # if not position:
+        #     world = World.objects.all.order_by("index")[0]
+        #     position = UserWorldProgressRecord.objects.create(
+        #         user=self.user,
+        #         world=world,
+        #     )
+        # else:
+        #     position = position[0]
+        #
+        # return position.world
 
-        # Instantiate the user position to the first world
-        if not position:
-            world = World.objects.all.order_by("index")[0]
-            position = UserWorldProgressRecord.objects.create(
+    def instantiate_position(self, world=None):
+        # Sets the initial location
+
+        if not world:
+            level = Level.objects.filter(
+                section__world__is_custom_world=False
+            ).order_by('id')[0]
+        else:
+            level = Level.objects.filter(
+                section__world=world
+            ).order_by('id')[0]
+
+        UserLevelProgressRecord.objects.create(
+            user=self.user,
+            level=level,
+        )
+
+        return level
+
+    def get_user_position_in_world(self, world=None):
+        if not world:
+            # Progress in main world
+            progress = UserLevelProgressRecord.objects.filter(
                 user=self.user,
-                world=world,
+                level__section__world__is_custom_world=False
             )
         else:
-            position = position[0]
-
-        return position.world
-
-    def get_user_position_in_world(self):
-        position = UserLevelProgressRecord.objects.filter(user=self.user, is_completed=False)
+            # Progress in custom world
+            progress = UserLevelProgressRecord.objects.filter(
+                user=self.user,
+                level__section__world=world
+            )
 
         # Instantiate the user position to the first level
-        if not position:
-            level = Level.objects.all().order_by("id")[0]
-            position = UserLevelProgressRecord.objects.create(
-                user=self.user,
-                level=level,
-            )
-        else:
-            position = position[0]
+        a = progress.filter(is_completed=False)
 
-        return position.level
+        b = progress.filter(is_completed=True)
+
+        if not progress:
+            # User doesn't have any record at all
+            position = self.instantiate_position(world)
+        elif not a and b:
+            # User has finished the main worlds / custom world
+            position = progress.order_by('-id')[0].level  # Last position
+        else:
+            position = a[0].level
+
+        return position
 
     def check_access_to_level(self, level_id):
         self.get_user_position_in_map()  # Put here first to set user location
@@ -57,11 +107,11 @@ class GameManager:
         record = QuestionRecord.objects.filter(
             user=self.user,
             level=level,
-            is_completed=False
         )
 
         # Only generate a new session if there is no unanswered question in the world
         if not record:
+            # Only generate a new session if there is a
             record = QuestionRecord.objects.create(
                 user=self.user,
                 level=level,
@@ -69,7 +119,74 @@ class GameManager:
             )
         else:
             record = record[0]
+            if record.is_completed:
+                # User has completed the main worlds / custom world
+                record = None
         return record
+
+    def unlock_level(self, world=None):
+        position = self.get_user_position_in_world(world)
+        levels = Level.objects.filter(id__gt=position.id, section=position.section).order_by('id')
+        if not levels:
+            if not world:
+                # Try the next section
+                next_section = Section.objects.filter(id__gt=position.section.id, world__is_custom_world=False)
+                if not next_section:
+                    # Try the next world
+                    next_world = World.objects.filter(id__gt=position.section.world.id, is_custom_world=False)
+                    if not next_world:
+                        # User has finished the main world
+                        return None
+                    else:
+                        next_section = Section.objects.filter(world=next_world[0]).order_by('id')[0]
+                else:
+                    next_section = next_section[0]
+
+                next_level = Level.objects.filter(section=next_section).order_by('id')[0]
+            else:
+                # User has finished the custom world
+                return None
+        else:
+            next_level = levels[0]
+
+        UserLevelProgressRecord.objects.create(
+            user=self.user,
+            level=next_level,
+        )
+
+        return next_level
+
+    def check_answer_in_main_world(self, answer):
+        record = QuestionRecord.objects.filter(
+            user=self.user,
+            level__section__world__is_custom_world=False,
+            is_completed=False
+        )
+
+        if not record:
+            raise PermissionDenied(detail="You are not allowed to check answer.")
+        else:
+            record = record[0]
+
+        if answer.question.id != record.question.id:
+            raise PermissionDenied(detail="You are not allowed to check this answer.")
+
+        # Update the question record
+        record.is_completed = True
+        record.points_change = self.difficulty_points_map[answer.is_correct][record.question.difficulty]
+        record.completed_time = now()
+        record.is_correct = answer.is_correct
+        record.save()
+
+        # Update player progress
+        progress = UserLevelProgressRecord.objects.get(level=record.level)
+        progress.is_completed = True
+        progress.completed_time = now()
+        progress.save()
+
+        # Unlock the next level
+        self.unlock_level()
+        return record.is_correct, record.points_change
 
     def get_question_answer_in_main_world(self):
         position = self.get_user_position_in_world()
@@ -108,6 +225,8 @@ class GameManager:
 
         # Add to question record
         record = self.new_question_record_session(position, random_qn)
+        if not record:
+            raise PermissionDenied(detail="You are not allowed to get question. World completed.")
         question = record.question
 
         # Get the answer for this question

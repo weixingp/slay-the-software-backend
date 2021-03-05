@@ -9,6 +9,7 @@ from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, permissions, status
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
 from rest_framework.decorators import api_view
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -163,6 +164,24 @@ class QuestionView(APIView):
             "record_id": record.id
         }
         return Response(res)
+
+
+class CheckAnswerView(APIView):
+    def post(self, request):
+        user = request.user
+        gm = GameManager(user)
+
+        check_answer_serializer = CheckAnswerSerializer(data=request.data)
+        check_answer_serializer.is_valid(raise_exception=True)
+        answer = check_answer_serializer.validated_data['answer']
+
+        is_correct, points_change = gm.check_answer_in_main_world(answer)
+        res = {
+            "is_correct": is_correct,
+            "points_change": points_change,
+        }
+        return Response(res)
+
 
 class CreateQuestionView(APIView):
 

@@ -148,12 +148,6 @@ class UserWorldProgressRecord(models.Model):
 class UserLevelProgressRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="userlevelprogressrecord_user_fk")
     level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="userlevelprogressrecord_level_fk")
-    question = models.ForeignKey(
-        Question,
-        on_delete=models.SET_NULL,
-        related_name="userlevelprogressrecord_question_fk",
-        null=True
-    )
     is_completed = models.BooleanField(default=False)
     started_time = models.DateTimeField(auto_now_add=True)
     completed_time = models.DateTimeField(null=True, blank=True)
