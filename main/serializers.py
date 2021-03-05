@@ -178,7 +178,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class GetLocationSerializer(serializers.Serializer):
+class WorldValidateSerializer(serializers.Serializer):
     world_id = serializers.CharField(required=False, allow_blank=True)
 
     def validate(self, attrs):

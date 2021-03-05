@@ -155,9 +155,11 @@ class WorldDetails(APIView):
 class QuestionView(APIView):
     def get(self, request):
         user = request.user
-
         gm = GameManager(user)
-        question, answers, record = gm.get_question_answer_in_main_world()
+        serializer = WorldValidateSerializer(data=request.GET)
+        serializer.is_valid(raise_exception=True)
+
+        question, answers, record = gm.get_question_answer_in_main_world(serializer.validated_data['world'])
         question_serializer = QuestionSerializer(question)
         answers_serializer = AnswerWithoutCorrectShownSerializer(answers, many=True)
         # question_record_serializer = QuestionRecordSerializer(record)
@@ -173,12 +175,14 @@ class CheckAnswerView(APIView):
     def post(self, request):
         user = request.user
         gm = GameManager(user)
+        serializer = WorldValidateSerializer(data=request.GET)
+        serializer.is_valid(raise_exception=True)
 
         check_answer_serializer = CheckAnswerSerializer(data=request.data)
         check_answer_serializer.is_valid(raise_exception=True)
         answer = check_answer_serializer.validated_data['answer']
 
-        is_correct, points_change = gm.check_answer_in_main_world(answer)
+        is_correct, points_change = gm.check_answer_in_world(serializer.validated_data['world'], answer)
         res = {
             "is_correct": is_correct,
             "points_change": points_change,
@@ -279,7 +283,7 @@ class GetPositionView(APIView):
     def get(self, request):
         user = request.user
         gm = GameManager(user)
-        position_serializer = GetLocationSerializer(data=request.GET)
+        position_serializer = WorldValidateSerializer(data=request.GET)
         position_serializer.is_valid(raise_exception=True)
         position = gm.get_user_position_in_world(position_serializer.validated_data['world'])
         res = {

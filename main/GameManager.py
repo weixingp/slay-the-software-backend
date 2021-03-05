@@ -100,7 +100,8 @@ class GameManager:
         else:
             return False
 
-    def get_user_points_by_world(self, world_id):
+    def get_user_points_by_world(self, world):
+        # To be implemented
         return 1
 
     def new_question_record_session(self, level, question):
@@ -156,12 +157,21 @@ class GameManager:
 
         return next_level
 
-    def check_answer_in_main_world(self, answer):
-        record = QuestionRecord.objects.filter(
-            user=self.user,
-            level__section__world__is_custom_world=False,
-            is_completed=False
-        )
+    def check_answer_in_world(self, world, answer):
+        if world is None:
+            # Main world
+            record = QuestionRecord.objects.filter(
+                user=self.user,
+                level__section__world__is_custom_world=False,
+                is_completed=False
+            )
+        else:
+            # Custom world
+            record = QuestionRecord.objects.filter(
+                user=self.user,
+                level__section__world=world,
+                is_completed=False
+            )
 
         if not record:
             raise PermissionDenied(detail="You are not allowed to check answer.")
@@ -188,13 +198,13 @@ class GameManager:
         self.unlock_level()
         return record.is_correct, record.points_change
 
-    def get_question_answer_in_main_world(self):
-        position = self.get_user_position_in_world()
+    def get_question_answer_in_main_world(self, world):
+        position = self.get_user_position_in_world(world)
 
         section = position.section
         easy_qn_threshold = 14
         normal_qn_threshold = 30
-        points = self.get_user_points_by_world(section.world.id)
+        points = self.get_user_points_by_world(section.world)
         # 1 -> Easy, 2 -> Normal, 3 -> Hard
         if points <= easy_qn_threshold:
             difficulty = "1"
@@ -217,7 +227,18 @@ class GameManager:
         ).values_list('pk', flat=True)
 
         if len(pks) < 1:
+            # Recycle questions that has been unanswered
             pks = Question.objects.filter(section=section, difficulty=difficulty).values_list('pk', flat=True)
+            if len(pks) < 1:
+                # Choose from all difficulties
+                pks = Question.objects.filter(
+                    section=section,
+                    difficulty__in=self.difficulty_points_map[True].keys()
+                ).values_list('pk', flat=True)
+
+        if len(pks) < 1:
+            # If still no question, raise
+            raise NotFound(detail="No question found for this world.")
 
         # Get random question of the processed list of questions
         random_idx = randint(0, len(pks) - 1)
