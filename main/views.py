@@ -175,12 +175,14 @@ class CheckAnswerView(APIView):
     def post(self, request):
         user = request.user
         gm = GameManager(user)
+        serializer = WorldValidateSerializer(data=request.GET)
+        serializer.is_valid(raise_exception=True)
 
         check_answer_serializer = CheckAnswerSerializer(data=request.data)
         check_answer_serializer.is_valid(raise_exception=True)
         answer = check_answer_serializer.validated_data['answer']
 
-        is_correct, points_change = gm.check_answer_in_main_world(answer)
+        is_correct, points_change = gm.check_answer_in_world(serializer.validated_data['world'], answer)
         res = {
             "is_correct": is_correct,
             "points_change": points_change,

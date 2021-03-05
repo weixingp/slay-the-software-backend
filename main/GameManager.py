@@ -157,12 +157,21 @@ class GameManager:
 
         return next_level
 
-    def check_answer_in_main_world(self, answer):
-        record = QuestionRecord.objects.filter(
-            user=self.user,
-            level__section__world__is_custom_world=False,
-            is_completed=False
-        )
+    def check_answer_in_world(self, world, answer):
+        if world is None:
+            # Main world
+            record = QuestionRecord.objects.filter(
+                user=self.user,
+                level__section__world__is_custom_world=False,
+                is_completed=False
+            )
+        else:
+            # Custom world
+            record = QuestionRecord.objects.filter(
+                user=self.user,
+                level__section__world=world,
+                is_completed=False
+            )
 
         if not record:
             raise PermissionDenied(detail="You are not allowed to check answer.")
