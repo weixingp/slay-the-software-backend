@@ -10,14 +10,14 @@ from main.models import UserLevelProgressRecord, UserWorldProgressRecord, World,
 class GameManager:
     difficulty_points_map = {  # Getting correct answer
         True: {
-            "1": 1,
-            "2": 2,
-            "3": 3,
+            "1": 10,
+            "2": 20,
+            "3": 30,
         },
         False: {  # Getting wrong answer
-            "1": -0.5,
-            "2": -1,
-            "3": -2,
+            "1": -5,
+            "2": -10,
+            "3": -15,
         }
 
     }
@@ -105,24 +105,39 @@ class GameManager:
         return 1
 
     def new_question_record_session(self, level, question):
-        record = QuestionRecord.objects.filter(
+        records = QuestionRecord.objects.filter(
             user=self.user,
             level=level,
         )
 
-        # Only generate a new session if there is no unanswered question in the world
-        if not record:
-            # Only generate a new session if there is a
+        if not records:
+            # Only generate a new session if there is no unanswered question in the world
             record = QuestionRecord.objects.create(
                 user=self.user,
                 level=level,
                 question=question,
             )
         else:
-            record = record[0]
-            if record.is_completed:
-                # User has completed the main worlds / custom world
-                record = None
+            # Uncompleted question for this level
+            records = records.filter(is_completed=False)
+            if records:
+                record = records[0]
+            else:
+                progress = UserLevelProgressRecord.objects.filter(
+                    user=self.user,
+                    level=level,
+                    is_completed=False
+                )
+                if progress:
+                    # Generate a question session if there is uncompleted progress for this level
+                    record = QuestionRecord.objects.create(
+                        user=self.user,
+                        level=level,
+                        question=question,
+                    )
+                else:
+                    record = None
+
         return record
 
     def unlock_level(self, world=None):
@@ -184,6 +199,7 @@ class GameManager:
         # Update the question record
         record.is_completed = True
         record.points_change = self.difficulty_points_map[answer.is_correct][record.question.difficulty]
+        # record.points_change = -10
         record.completed_time = now()
         record.is_correct = answer.is_correct
         record.save()
@@ -203,8 +219,8 @@ class GameManager:
         position = self.get_user_position_in_world(world)
 
         section = position.section
-        easy_qn_threshold = 14
-        normal_qn_threshold = 30
+        easy_qn_threshold = 20
+        normal_qn_threshold = 65
         points = self.get_user_points_by_world(section.world)
         # 1 -> Easy, 2 -> Normal, 3 -> Hard
         if points <= easy_qn_threshold:
