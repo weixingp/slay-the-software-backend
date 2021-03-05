@@ -34,11 +34,11 @@ class Command(BaseCommand):
         User.objects.create_user(username="shenrui", password="shenrui123", first_name="Shen Rui", last_name="Chong")
         self.stdout.write("...complete")
 
-    '''
-    Creates 3 Worlds for Campaign Mode.
-    Each World has 3 Sections, and each Section has 4 Levels.
-    '''
     def __create_campaign_mode(self):
+        """
+        Creates 3 Worlds for Campaign Mode.
+        Each World has 3 Sections, and each Section has 4 Levels.
+        """
         self.stdout.write("Creating data for Campaign Mode...")
         aquila = World.objects.create(world_name="Aquila", topic="Requirements Analysis", index=1)
         bootes = World.objects.create(world_name="Bootes", topic="Software Architecture Styles", index=2)
@@ -69,18 +69,19 @@ class Command(BaseCommand):
         Level.objects.create(section=section, level_name="Level Three", index=index * 4 - 1)
 
         if has_final_boss:
-            Level.objects.create(section=section, level_name="Final Boss Level", index=index*4, is_final_boss_level=True)
+            Level.objects.create(section=section, level_name="Final Boss Level", index=index * 4,
+                                 is_final_boss_level=True)
         else:
-            Level.objects.create(section=section, level_name="Boss Level", index=index*4, is_boss_level=True)
+            Level.objects.create(section=section, level_name="Boss Level", index=index * 4, is_boss_level=True)
 
         # create questions for this section
         self.__create_questions_and_answers(section, has_final_boss)
 
-    '''
-    Creates 21 Questions for Sections without Final Boss, 27 Questions for Sections with Final Boss.
-    There is an even distribution of difficulty levels.
-    '''
     def __create_questions_and_answers(self, section, has_final_boss):
+        """
+        Creates 21 Questions for Sections without Final Boss, 27 Questions for Sections with Final Boss.
+        There is an even distribution of difficulty levels.
+        """
         sp_user1 = User.objects.get(username="weixing")
         sp_user2 = User.objects.get(username="favian")
         sp_user3 = User.objects.get(username="junwei")
@@ -90,20 +91,18 @@ class Command(BaseCommand):
         else:
             upper_limit = 8
 
-        if has_final_boss:
-            for i in range(1, upper_limit):
-                q1 = Question.objects.create(section=section, question="Question %s" % (i * 3 - 2), difficulty="1",
-                                             created_by=sp_user1)
-                q2 = Question.objects.create(section=section, question="Question %s" % (i * 3 - 1), difficulty="2",
-                                             created_by=sp_user2)
-                q3 = Question.objects.create(section=section, question="Question %s" % (i * 3), difficulty="3",
-                                             created_by=sp_user3)
+        for i in range(1, upper_limit):
+            q1 = Question.objects.create(section=section, question="Question %s" % (i * 3 - 2), difficulty="1",
+                                         created_by=sp_user1)
+            q2 = Question.objects.create(section=section, question="Question %s" % (i * 3 - 1), difficulty="2",
+                                         created_by=sp_user2)
+            q3 = Question.objects.create(section=section, question="Question %s" % (i * 3), difficulty="3",
+                                         created_by=sp_user3)
 
-                # create answers for each question
-                self.__create_answers_for_questions(q1)
-                self.__create_answers_for_questions(q2)
-                self.__create_answers_for_questions(q3)
-
+            # create answers for each question
+            self.__create_answers_for_questions(q1)
+            self.__create_answers_for_questions(q2)
+            self.__create_answers_for_questions(q3)
 
     def __create_answers_for_questions(self, question):
         Answer.objects.create(question=question, answer="Answer 1")
