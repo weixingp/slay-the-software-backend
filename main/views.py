@@ -155,9 +155,11 @@ class WorldDetails(APIView):
 class QuestionView(APIView):
     def get(self, request):
         user = request.user
-
         gm = GameManager(user)
-        question, answers, record = gm.get_question_answer_in_main_world()
+        serializer = WorldValidateSerializer(data=request.GET)
+        serializer.is_valid(raise_exception=True)
+
+        question, answers, record = gm.get_question_answer_in_main_world(serializer.validated_data['world'])
         question_serializer = QuestionSerializer(question)
         answers_serializer = AnswerWithoutCorrectShownSerializer(answers, many=True)
         # question_record_serializer = QuestionRecordSerializer(record)
@@ -279,7 +281,7 @@ class GetPositionView(APIView):
     def get(self, request):
         user = request.user
         gm = GameManager(user)
-        position_serializer = GetLocationSerializer(data=request.GET)
+        position_serializer = WorldValidateSerializer(data=request.GET)
         position_serializer.is_valid(raise_exception=True)
         position = gm.get_user_position_in_world(position_serializer.validated_data['world'])
         res = {
