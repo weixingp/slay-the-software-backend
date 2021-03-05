@@ -109,7 +109,10 @@ class QuestionAnswerSerializer(serializers.Serializer):
 
 class LeaderboardSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()
+    first_name = serializers.CharField(max_length=256)
+    last_name = serializers.CharField(max_length=256)
     points = serializers.IntegerField()
+    rank = serializers.IntegerField()
 
 
 class SectionSerializer(serializers.ModelSerializer):

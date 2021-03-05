@@ -37,7 +37,7 @@ class Command(BaseCommand):
 
     def __create_students(self):
         self.stdout.write("Creating students...")
-        User.objects.create_user(username="wanqian", password="wanqian123", first_name="Qian", last_name="Wan")
+        User.objects.create_user(username="wanqian", password="wanqian123", first_name="Wan", last_name="Qian")
         User.objects.create_user(username="josh", password="josh123", first_name="Josh", last_name="Lim")
         User.objects.create_user(username="shenrui", password="shenrui123", first_name="Shen Rui", last_name="Chong")
         self.stdout.write("...complete")

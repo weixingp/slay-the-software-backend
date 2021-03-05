@@ -105,36 +105,78 @@ class UserView(RetrieveAPIView):
 class LeaderboardView(APIView):
 
     def get(self, request):
-        if request.world_id:  # get leaderboard of a particular world
-            sections = Section.objects.filter(world_id=request.world_id)  # get sections in the world
+        world_id = request.META.get("HTTP_WORLD_ID")
+        print(request.META)
+        if world_id:  # get leaderboard of a particular world
+            try:
+                world_id = int(world_id)
+            except ValueError:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            sections = Section.objects.filter(world_id=world_id)  # get sections in the world
             section_ids = [section.id for section in sections]  # extract section ids
             level_ids = []
             for section_id in section_ids:
                 levels = Level.objects.filter(section_id=section_id)  # get levels in the section
                 level_ids += [level.id for level in levels]  # extract level ids
-            student_records = QuestionRecord.objects.get(
-                level_id__in=level_ids)  # extract level records which fall in level_ids
+            student_records = QuestionRecord.objects.filter(level_id__in=level_ids)  # extract level records which fall in level_ids
         else:  # get overall leaderboard
             student_records = QuestionRecord.objects.all()
 
         # sum up points for each student and sort in desc order
-        student_points = student_records.values('user_id').annotate(points=Sum('points_gained')).order_by(
-            'points').reverse()
+        student_points = student_records.values('user_id', 'user__first_name', 'user__last_name')\
+            .annotate(points=Sum('points_change')).order_by('points').reverse()
 
-        if request.offset:
-            student_points = student_points[request.offset:]
-        if request.limit:
-            student_points = student_points[:request.limit]
+        # do cleaning of queryset
+        for i in range(1, len(student_points)+1):
+            student = student_points[i-1]
+            student["first_name"] = student.pop("user__first_name")
+            student["last_name"] = student.pop("user__last_name")
+            student["rank"] = i
 
-        serializer = LeaderboardSerializer(data=student_points, many=True)
+        # if user_id specified, return only the ranking of that user
+        # don't need to apply offset/limit in this case
+        user_id = request.META.get("HTTP_USER_ID")
+        if user_id:
+            try:
+                user_id = int(user_id)
+            except ValueError:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            student_exists = False
+            for student in student_points:
+                if student["user_id"] == int(user_id):
+                    serializer = LeaderboardSerializer(student)
+                    student_exists = True
+                    break
+            if not student_exists:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # apply offset, if any
+            offset = request.META.get('HTTP_OFFSET')
+            if offset:
+                try:
+                    student_points = student_points[int(offset)-1:]
+                except (ValueError, AssertionError):
+                    return Response(status=status.HTTP_400_BAD_REQUEST)
+
+            # apply limit, if any
+            limit = request.META.get('HTTP_LIMIT')
+            if limit:
+                try:
+                    student_points = student_points[:int(limit)]
+                except (ValueError, AssertionError):
+                    return Response(status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = LeaderboardSerializer(student_points, many=True)
+
         return Response(serializer.data)
+
 
 
 class WorldView(APIView):
 
     def get(self, request):
         worlds = World.objects.all()
-        serializer = WorldSerializer(worlds)
+        serializer = WorldSerializer(worlds, many=True)
         return Response(serializer.data)
 
 
@@ -239,7 +281,7 @@ class CustomWorldView(APIView):
     def get(self, request):
         user = User.objects.get(id=request.user.id)
         user_custom_worlds = CustomWorld.objects.filter(created_by=user)
-        serializer = CustomWorldSerializer(user_custom_worlds)
+        serializer = CustomWorldSerializer(user_custom_worlds, many=True)
         return Response(serializer.data)
 
     def post(self, request):
