@@ -1,15 +1,23 @@
 from django.core.management.base import BaseCommand, CommandError
 from main.models import *
-
+from django.utils import timezone
+import random
 
 class Command(BaseCommand):
     help = 'Initialises the database. Make sure to run "python manage.py flush" first.'
+
+    def __init__(self):
+        super().__init__()
+        self.completed_time = timezone.now() + timezone.timedelta(days=2)
 
     def handle(self, *args, **options):
         self.__create_superusers()
         self.__create_teachers()
         self.__create_students()
         self.__create_campaign_mode()
+        self.__simulate_student1_progress()
+        self.__simulate_student2_progress()
+        self.__simulate_student3_progress()
 
     def __create_superusers(self):
         self.stdout.write("Creating superusers...")
@@ -109,3 +117,137 @@ class Command(BaseCommand):
         Answer.objects.create(question=question, answer="Answer 2")
         Answer.objects.create(question=question, answer="Answer 3")
         Answer.objects.create(question=question, answer="Answer 4", is_correct=True)
+
+    def __simulate_student1_progress(self):
+        self.stdout.write("Simulating Student 1...")
+        # Student1 will have finished 1 World, and 2 Sections in another World
+        student = User.objects.get(username="wanqian")
+
+        # add records for finished world
+        completed_world = World.objects.get(id=1)
+        UserWorldProgressRecord.objects.create(user=student, world=completed_world, is_completed=True,
+                                               completed_time=self.completed_time)
+        # add level and question records for finished world
+        sections = Section.objects.filter(world=completed_world)
+        for section in sections:
+            levels = Level.objects.filter(section=section)
+            questions = Question.objects.filter(section=section)
+            for level in levels:
+                UserLevelProgressRecord.objects.create(user=student, level=level, is_completed=True,
+                                                       completed_time=self.completed_time)
+                if level.is_final_boss_level:
+                    num_of_questions_to_add = 10
+                else:
+                    num_of_questions_to_add = 3
+                for i in range(num_of_questions_to_add):
+                    question = random.choice(questions)
+                    QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
+                                                  points_change=int(question.difficulty), reason="Correct",
+                                                  is_completed=True, completed_time=self.completed_time)
+        # add records for partially finished world
+        partially_completed_world = World.objects.get(id=2)
+        UserWorldProgressRecord.objects.create(user=student, world=partially_completed_world)
+        # add level and question records for partially finished world
+        sections = Section.objects.filter(world=partially_completed_world)[:2] # change num of completed sections here
+        for section in sections:
+            levels = Level.objects.filter(section=section)
+            questions = Question.objects.filter(section=section)
+            for level in levels:
+                UserLevelProgressRecord.objects.create(user=student, level=level, is_completed=True,
+                                                       completed_time=self.completed_time)
+                if level.is_final_boss_level:
+                    num_of_questions_to_add = 10
+                else:
+                    num_of_questions_to_add = 3
+                for i in range(num_of_questions_to_add):
+                    question = random.choice(questions)
+                    QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
+                                                  points_change=int(question.difficulty), reason="Correct",
+                                                  is_completed=True, completed_time=self.completed_time)
+        self.stdout.write("...complete")
+
+    def __simulate_student2_progress(self):
+        self.stdout.write("Simulating Student 2...")
+        # Student2 will have finished 2 Worlds, and has cleared 3 Levels in the 1st Section of the last World
+        student = User.objects.get(username="josh")
+
+        # add records for finished world
+        completed_worlds = World.objects.filter(id__range=(0, 2)) # change here for num of finished worlds
+        for world in completed_worlds:
+            UserWorldProgressRecord.objects.create(user=student, world=world, is_completed=True,
+                                                   completed_time=self.completed_time)
+            # add level and question records for finished world
+            sections = Section.objects.filter(world=world)
+            for section in sections:
+                levels = Level.objects.filter(section=section)
+                questions = Question.objects.filter(section=section)
+                for level in levels:
+                    UserLevelProgressRecord.objects.create(user=student, level=level, is_completed=True,
+                                                           completed_time=self.completed_time)
+                    if level.is_final_boss_level:
+                        num_of_questions_to_add = 10
+                    else:
+                        num_of_questions_to_add = 3
+                    for i in range(num_of_questions_to_add):
+                        question = random.choice(questions)
+                        QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
+                                                      points_change=int(question.difficulty), reason="Correct",
+                                                      is_completed=True, completed_time=self.completed_time)
+
+        # add records for partially finished world
+        partially_completed_world = World.objects.get(id=3)
+        UserWorldProgressRecord.objects.create(user=student, world=partially_completed_world)
+        # add level and question records for partially finished world
+        section = Section.objects.filter(world=partially_completed_world)[0]
+        levels = Level.objects.filter(section=section)[:3]
+        questions = Question.objects.filter(section=section)
+        for level in levels:
+            UserLevelProgressRecord.objects.create(user=student, level=level, is_completed=True,
+                                                   completed_time=self.completed_time)
+            num_of_questions_to_add = 3
+            for i in range(num_of_questions_to_add):
+                question = random.choice(questions)
+                QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
+                                              points_change=int(question.difficulty), reason="Correct",
+                                              is_completed=True, completed_time=self.completed_time)
+        self.stdout.write("...complete")
+
+    def __simulate_student3_progress(self):
+        self.stdout.write("Simulating Student 3...")
+        # Student3 will have finished 11 Levels (so 2/3 Sections completed) of the 1st World,
+        # with the Final Boss Level not cleared yet
+        student = User.objects.get(username="shenrui")
+        # add records for partially finished world
+        partially_completed_world = World.objects.get(id=1)
+        UserWorldProgressRecord.objects.create(user=student, world=partially_completed_world)
+        # add level and question records for completed sections
+        sections = Section.objects.filter(world=partially_completed_world)[:2]
+        for section in sections:
+            levels = Level.objects.filter(section=section)
+            questions = Question.objects.filter(section=section)
+            for level in levels:
+                UserLevelProgressRecord.objects.create(user=student, level=level, is_completed=True,
+                                                       completed_time=self.completed_time)
+                if level.is_final_boss_level:
+                    num_of_questions_to_add = 10
+                else:
+                    num_of_questions_to_add = 3
+                for i in range(num_of_questions_to_add):
+                    question = random.choice(questions)
+                    QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
+                                                  points_change=int(question.difficulty), reason="Correct",
+                                                  is_completed=True, completed_time=self.completed_time)
+        # add level and question records for last incomplete section
+        section = Section.objects.filter(world=partially_completed_world)[2]
+        levels = Level.objects.filter(section=section)[:3]
+        questions = Question.objects.filter(section=section)
+        for level in levels:
+            UserLevelProgressRecord.objects.create(user=student, level=level, is_completed=True,
+                                                   completed_time=self.completed_time)
+            num_of_questions_to_add = 3
+            for i in range(num_of_questions_to_add):
+                question = random.choice(questions)
+                QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
+                                              points_change=int(question.difficulty), reason="Correct",
+                                              is_completed=True, completed_time=self.completed_time)
+        self.stdout.write("...complete")
