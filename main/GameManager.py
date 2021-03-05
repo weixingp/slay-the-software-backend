@@ -188,14 +188,15 @@ class GameManager:
         record.is_correct = answer.is_correct
         record.save()
 
-        # Update player progress
-        progress = UserLevelProgressRecord.objects.get(level=record.level)
-        progress.is_completed = True
-        progress.completed_time = now()
-        progress.save()
+        if record.is_correct:
+            # Update player progress if answer correctly
+            progress = UserLevelProgressRecord.objects.get(level=record.level)
+            progress.is_completed = True
+            progress.completed_time = now()
+            progress.save()
 
-        # Unlock the next level
-        self.unlock_level()
+            # Unlock the next level
+            self.unlock_level()
         return record.is_correct, record.points_change
 
     def get_question_answer_in_main_world(self, world):
