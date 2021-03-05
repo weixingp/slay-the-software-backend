@@ -229,6 +229,16 @@ class GameManager:
         if len(pks) < 1:
             # Recycle questions that has been unanswered
             pks = Question.objects.filter(section=section, difficulty=difficulty).values_list('pk', flat=True)
+            if len(pks) < 1:
+                # Choose from all difficulties
+                pks = Question.objects.filter(
+                    section=section,
+                    difficulty__in=self.difficulty_points_map[True].keys()
+                ).values_list('pk', flat=True)
+
+        if len(pks) < 1:
+            # If still no question, raise
+            raise NotFound(detail="No question found for this world.")
 
         # Get random question of the processed list of questions
         random_idx = randint(0, len(pks) - 1)
