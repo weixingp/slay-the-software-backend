@@ -17,4 +17,8 @@ question_urls = [
     path('api/questions/<int:pk>/', QuestionListView.as_view()),
 ]
 
+position_urls = [
+    path('api/position', GetPositionView.as_view())
+]
+urlpatterns += position_urls
 urlpatterns += question_urls

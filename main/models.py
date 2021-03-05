@@ -70,8 +70,8 @@ class CustomWorld(World):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="custom_worlds")
     access_code = models.CharField(max_length=256) # to change max length after format has been decided
     is_active = models.BooleanField()
-    date_created = models.DateTimeField(auto_now_add=True)
-    date_modified = models.DateTimeField(auto_now=True)
+    # date_created = models.DateTimeField(auto_now_add=True)
+    # date_modified = models.DateTimeField(auto_now=True)
 
     # Object name for display in admin panel
     def __str__(self):

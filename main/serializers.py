@@ -176,3 +176,19 @@ class AssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assignment
         fields = '__all__'
+
+
+class GetLocationSerializer(serializers.Serializer):
+    world_id = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        if 'world_id' not in attrs:
+            world = None
+        else:
+            world_id = attrs['world_id']
+            try:
+                world = World.objects.get(id=world_id)
+            except ObjectDoesNotExist:
+                raise NotFound(detail="World does not exist")
+
+        return {"world": world}

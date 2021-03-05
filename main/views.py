@@ -63,7 +63,7 @@ class CsrfExemptSessionAuthentication(authentication.SessionAuthentication):
 
 class LoginView(APIView):
     permission_classes = (permissions.AllowAny,)
-    authentication_classes = (TokenAuthentication, )
+    authentication_classes = (TokenAuthentication,)
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -105,19 +105,21 @@ class UserView(RetrieveAPIView):
 class LeaderboardView(APIView):
 
     def get(self, request):
-        if request.world_id: # get leaderboard of a particular world
-            sections = Section.objects.filter(world_id = request.world_id) # get sections in the world
-            section_ids = [section.id for section in sections] # extract section ids
+        if request.world_id:  # get leaderboard of a particular world
+            sections = Section.objects.filter(world_id=request.world_id)  # get sections in the world
+            section_ids = [section.id for section in sections]  # extract section ids
             level_ids = []
             for section_id in section_ids:
                 levels = Level.objects.filter(section_id=section_id)  # get levels in the section
-                level_ids += [level.id for level in levels] # extract level ids
-            student_records = QuestionRecord.objects.get(level_id__in=level_ids) # extract level records which fall in level_ids
-        else: # get overall leaderboard
+                level_ids += [level.id for level in levels]  # extract level ids
+            student_records = QuestionRecord.objects.get(
+                level_id__in=level_ids)  # extract level records which fall in level_ids
+        else:  # get overall leaderboard
             student_records = QuestionRecord.objects.all()
 
         # sum up points for each student and sort in desc order
-        student_points = student_records.values('user_id').annotate(points=Sum('points_gained')).order_by('points').reverse()
+        student_points = student_records.values('user_id').annotate(points=Sum('points_gained')).order_by(
+            'points').reverse()
 
         if request.offset:
             student_points = student_points[request.offset:]
@@ -134,6 +136,7 @@ class WorldView(APIView):
         worlds = World.objects.all()
         serializer = WorldSerializer(worlds)
         return Response(serializer.data)
+
 
 class WorldDetails(APIView):
 
@@ -183,7 +186,6 @@ class CheckAnswerView(APIView):
         return Response(res)
 
 
-
 class CreateQuestionView(APIView):
     def get(self, request):
         questions = Question.objects.all()
@@ -197,9 +199,10 @@ class CreateQuestionView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
+
 class QuestionListView(APIView):
 
-    def get_object(self,pk):
+    def get_object(self, pk):
         try:
             return Question.objects.get(pk=pk)
         except Question.objects.get(pk=pk):
@@ -225,6 +228,7 @@ class QuestionListView(APIView):
             question = self.get_object(pk)
             question.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class CustomWorldView(APIView):
 
@@ -269,3 +273,18 @@ class CustomWorldDetails(APIView):
         custom_world = self.get_object(access_code)
         custom_world.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class GetPositionView(APIView):
+    def get(self, request):
+        user = request.user
+        gm = GameManager(user)
+        position_serializer = GetLocationSerializer(data=request.GET)
+        position_serializer.is_valid(raise_exception=True)
+        position = gm.get_user_position_in_world(position_serializer.validated_data['world'])
+        res = {
+            "world_id": position.section.world.id,
+            "section_id": position.section.id,
+            "level_id": position.id
+        }
+        return Response(res)

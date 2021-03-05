@@ -62,7 +62,7 @@ class GameManager:
         return level
 
     def get_user_position_in_world(self, world=None):
-        if not world:
+        if not world or not world.is_custom_world:
             # Progress in main world
             progress = UserLevelProgressRecord.objects.filter(
                 user=self.user,
