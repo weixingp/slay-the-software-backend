@@ -161,3 +161,18 @@ class CreateQuestionSerializer(serializers.ModelSerializer):
         for answer_data in answers_data:
             Answer.objects.create(question=question, **answer_data)
         return question
+
+
+class CustomWorldSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomWorld
+        fields = '__all__'
+
+
+# KIV if needed
+class AssignmentSerializer(serializers.ModelSerializer):
+    custom_world = CustomWorldSerializer()
+
+    class Meta:
+        model = Assignment
+        fields = '__all__'
