@@ -4,11 +4,11 @@ from django.utils import timezone
 
 
 # Create your models here.
-class AbstractWorld(models.Model): # had to make an abstract model because CustomWorld does not have index
+class World(models.Model):
     world_name = models.CharField(max_length=64)
     topic = models.CharField(max_length=64)
     is_custom_world = models.BooleanField(default=False)
-    index = models.IntegerField(unique=True)
+    index = models.IntegerField(unique=True, null=True, default=None)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
@@ -16,18 +16,11 @@ class AbstractWorld(models.Model): # had to make an abstract model because Custo
     def __str__(self):
         return "%s|%s" % (self.world_name, self.topic)
 
-    class Meta:
-        abstract = True
-
-
-class World(AbstractWorld):
-    pass
-
 
 class Section(models.Model):
     world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="sections")
     sub_topic_name = models.CharField(max_length=30)
-    index = models.IntegerField(unique=True)
+    index = models.IntegerField(unique=True, null=True, default=None)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
@@ -73,11 +66,10 @@ class Answer(models.Model):
             return "Incorrect"
 
 
-class CustomWorld(AbstractWorld):
+class CustomWorld(World):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="custom_worlds")
     access_code = models.CharField(max_length=6, unique=True)
     is_active = models.BooleanField(default=True)
-    index = None
     # date_created = models.DateTimeField(auto_now_add=True)
     # date_modified = models.DateTimeField(auto_now=True)
 
@@ -104,7 +96,7 @@ class Level(models.Model):
     level_name = models.CharField(max_length=64)
     is_boss_level = models.BooleanField(default=False)
     is_final_boss_level = models.BooleanField(default=False)
-    index = models.IntegerField(unique=True)
+    index = models.IntegerField(unique=True, null=True, default=None)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 

@@ -234,7 +234,7 @@ class CheckAnswerView(APIView):
 
 class CreateQuestionView(APIView):
     def get(self, request):
-        questions = Question.objects.all()
+        questions = Question.objects.filter(created_by=request.user)
         serializer = QuestionSerializer(questions, many=True)
         return Response(serializer.data)
 
@@ -259,6 +259,8 @@ class QuestionListView(APIView):
             question = self.get_object(pk)
             serializer = QuestionSerializer(question)
             return Response(serializer.data)
+        else:
+            return Response(status=status.HTTP_403_FORBIDDEN)
 
     def put(self, request, pk):
         if request.user == Question.objects.get(pk=pk).created_by:
@@ -289,13 +291,16 @@ class CustomWorldView(APIView):
 
     def post(self, request):
         data = request.data
+        print(data)
         data["created_by"] = self.get_user(request.user.id).id
         data["is_custom_world"] = True
-        print(data)
-        serializer = CustomWorldSerializer(data=request.data)
+        serializer = CustomWorldSerializer(data=data)
 
         if serializer.is_valid():
             serializer.save()
+            # make section
+            created_world = World.objects.get(world_name=data["world_name"])
+            Section.objects.create(world=created_world, sub_topic_name=created_world.world_name)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

@@ -167,6 +167,8 @@ class CreateQuestionSerializer(serializers.ModelSerializer):
 
 
 class CustomWorldSerializer(serializers.ModelSerializer):
+    sections = SectionSerializer(many=True, read_only=True)
+
     class Meta:
         model = CustomWorld
         fields = '__all__'

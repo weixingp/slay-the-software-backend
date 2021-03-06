@@ -2,17 +2,17 @@ from django.urls import path, include
 from .views import *
 
 urlpatterns= [
-    path('leaderboard/', LeaderboardView.as_view()),
-    path('worlds/', WorldView.as_view()),
-    path('worlds/<int:id>/', WorldDetails.as_view()),
-    path('worlds/custom/', CustomWorldView.as_view()),
-    path('worlds/custom/<str:access_code>/', CustomWorldDetails.as_view())
+    path('api/leaderboard/', LeaderboardView.as_view()),
+    path('api/worlds/', WorldView.as_view()),
+    path('api/worlds/<int:id>/', WorldDetails.as_view()),
+    path('api/worlds/custom/', CustomWorldView.as_view()),
+    path('api/worlds/custom/<str:access_code>/', CustomWorldDetails.as_view())
 ]
 
 question_urls = [
-    path('api/question/world', QuestionView.as_view()),
-    path('api/question/world/check', CheckAnswerView.as_view()),
-    path('api/questions/create/', CreateQuestionView.as_view()),
+    path('api/questions/world', QuestionView.as_view()),
+    path('api/questions/world/check', CheckAnswerView.as_view()),
+    path('api/questions/', CreateQuestionView.as_view()),
     path('api/questions/<int:pk>/', QuestionListView.as_view()),
 ]
 
