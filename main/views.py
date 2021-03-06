@@ -18,6 +18,7 @@ from .models import *
 from django.db.models import Sum
 
 from main.serializers import *
+from main.permissions import IsOwnerOrReadOnly
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -101,7 +102,6 @@ class UserView(RetrieveAPIView):
         return self.request.user
 
 
-# not tested yet
 class LeaderboardView(APIView):
 
     def get(self, request):
@@ -278,13 +278,20 @@ class QuestionListView(APIView):
 
 class CustomWorldView(APIView):
 
+    def get_user(self, id):
+        return User.objects.get(id=id)
+
     def get(self, request):
-        user = User.objects.get(id=request.user.id)
+        user = self.get_user(request.user.id)
         user_custom_worlds = CustomWorld.objects.filter(created_by=user)
         serializer = CustomWorldSerializer(user_custom_worlds, many=True)
         return Response(serializer.data)
 
     def post(self, request):
+        data = request.data
+        data["created_by"] = self.get_user(request.user.id).id
+        data["is_custom_world"] = True
+        print(data)
         serializer = CustomWorldSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -294,6 +301,7 @@ class CustomWorldView(APIView):
 
 
 class CustomWorldDetails(APIView):
+    permission_classes = [IsOwnerOrReadOnly]
 
     def get_object(self, access_code):
         try:
@@ -308,7 +316,7 @@ class CustomWorldDetails(APIView):
 
     def put(self, request, access_code):
         custom_world = self.get_object(access_code)
-        serializer = CustomWorldSerializer(custom_world, data=request.data)
+        serializer = CustomWorldSerializer(custom_world, data=request.data, partial=True)
 
         if serializer.is_valid():
             serializer.save()

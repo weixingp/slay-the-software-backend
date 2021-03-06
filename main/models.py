@@ -4,7 +4,7 @@ from django.utils import timezone
 
 
 # Create your models here.
-class World(models.Model):
+class AbstractWorld(models.Model): # had to make an abstract model because CustomWorld does not have index
     world_name = models.CharField(max_length=64)
     topic = models.CharField(max_length=64)
     is_custom_world = models.BooleanField(default=False)
@@ -15,6 +15,13 @@ class World(models.Model):
     # Object name for display in admin panel
     def __str__(self):
         return "%s|%s" % (self.world_name, self.topic)
+
+    class Meta:
+        abstract = True
+
+
+class World(AbstractWorld):
+    pass
 
 
 class Section(models.Model):
@@ -66,16 +73,17 @@ class Answer(models.Model):
             return "Incorrect"
 
 
-class CustomWorld(World):
+class CustomWorld(AbstractWorld):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="custom_worlds")
-    access_code = models.CharField(max_length=256) # to change max length after format has been decided
-    is_active = models.BooleanField()
+    access_code = models.CharField(max_length=6, unique=True)
+    is_active = models.BooleanField(default=True)
+    index = None
     # date_created = models.DateTimeField(auto_now_add=True)
     # date_modified = models.DateTimeField(auto_now=True)
 
     # Object name for display in admin panel
     def __str__(self):
-        return "%s|%s" % (self.world_id, self.created_by)
+        return "%s|%s" % (self.world_name, self.created_by)
 
 
 class Assignment(models.Model):
@@ -117,9 +125,9 @@ class Level(models.Model):
 
 # Points system migrated to UserLevelProgressRecord
 class QuestionRecord(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="questionrecord_user_fk")
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="questionrecord_question_fk")
-    level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="questionrecord_level_fk")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_question_records")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="question_records")
+    level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="level_question_records")
     is_correct = models.BooleanField(null=True, blank=True)
     points_change = models.IntegerField(default=0)
     reason = models.CharField(max_length=256, null=True, blank=True)
@@ -132,8 +140,8 @@ class QuestionRecord(models.Model):
 
 
 class UserWorldProgressRecord(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="userworldprogressrecord_user_fk")
-    world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="userworldprogressrecord_world_fk")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="world_progress_record")
+    world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="user_progress_record")
     is_completed = models.BooleanField(default=False)
     started_time = models.DateTimeField(auto_now_add=True)
     completed_time = models.DateTimeField(null=True, blank=True)
@@ -145,8 +153,8 @@ class UserWorldProgressRecord(models.Model):
 
 
 class UserLevelProgressRecord(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="userlevelprogressrecord_user_fk")
-    level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="userlevelprogressrecord_level_fk")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="level_progress_record")
+    level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="user_progress_record")
     is_completed = models.BooleanField(default=False)
     started_time = models.DateTimeField(auto_now_add=True)
     completed_time = models.DateTimeField(null=True, blank=True)
