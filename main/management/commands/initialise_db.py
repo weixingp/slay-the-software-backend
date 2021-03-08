@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand, CommandError
 from main.models import *
 from django.utils import timezone
 import random
+from main import GameManager as gm
 
 class Command(BaseCommand):
     help = 'Initialises the database. Make sure to run "python manage.py flush" first.'
@@ -164,6 +165,11 @@ class Command(BaseCommand):
                     QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
                                                   points_change=int(question.difficulty), reason="Correct",
                                                   is_completed=True, completed_time=self.completed_time)
+
+        # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
+        next_level = Level.objects.get(id=21)
+        UserLevelProgressRecord.objects.create(user=student, level=next_level)
+
         self.stdout.write("...complete")
 
     def __simulate_student2_progress(self):
@@ -210,6 +216,11 @@ class Command(BaseCommand):
                 QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
                                               points_change=int(question.difficulty), reason="Correct",
                                               is_completed=True, completed_time=self.completed_time)
+
+        # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
+        next_level = Level.objects.get(id=28)
+        UserLevelProgressRecord.objects.create(user=student, level=next_level)
+
         self.stdout.write("...complete")
 
     def __simulate_student3_progress(self):
@@ -250,4 +261,9 @@ class Command(BaseCommand):
                 QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
                                               points_change=int(question.difficulty), reason="Correct",
                                               is_completed=True, completed_time=self.completed_time)
+
+        # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
+        next_level = Level.objects.get(id=12)
+        UserLevelProgressRecord.objects.create(user=student, level=next_level)
+
         self.stdout.write("...complete")

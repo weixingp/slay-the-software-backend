@@ -347,3 +347,18 @@ class GetPositionView(APIView):
             "level_id": position.id
         }
         return Response(res)
+
+# KIV if need
+# class AssignmentView(APIView):
+#
+#     def get(self, request):
+#         assignments = Assignment.objects.all()
+#         serializer = AssignmentSerializer(assignments)
+#         return Response(serializer.data)
+#
+#     def post(self, request):
+#         serializer = CreateQuestionSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save(created_by=request.user)
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
