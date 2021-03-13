@@ -294,6 +294,12 @@ class Command(BaseCommand):
 
                 # create Question
                 question_text = "Custom Question " + str(i+1)
-                Question.objects.create(question=question_text, section=section, difficulty="1", created_by=student)
+                question = Question.objects.create(question=question_text, section=section, difficulty="1", created_by=student)
+
+                # create Answers
+                Answer.objects.create(question=question, answer="Custom Answer 1")
+                Answer.objects.create(question=question, answer="Custom Answer 2")
+                Answer.objects.create(question=question, answer="Custom Answer 3")
+                Answer.objects.create(question=question, answer="Custom Answer 4", is_correct=True)
 
         self.stdout.write("...complete")
