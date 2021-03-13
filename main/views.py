@@ -175,7 +175,7 @@ class LeaderboardView(APIView):
 class WorldView(APIView):
 
     def get(self, request):
-        worlds = World.objects.all()
+        worlds = World.objects.filter(is_custom_world=False)
         serializer = WorldSerializer(worlds, many=True)
         return Response(serializer.data)
 
