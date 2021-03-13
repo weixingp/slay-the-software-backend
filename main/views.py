@@ -19,6 +19,7 @@ from django.db.models import Sum
 
 from main.serializers import *
 from main.permissions import IsOwnerOrReadOnly
+import random, string
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -295,6 +296,7 @@ class CustomWorldView(APIView):
         print(data)
         data["created_by"] = self.get_user(request.user.id).id
         data["is_custom_world"] = True
+        data["access_code"] = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
         serializer = CustomWorldSerializer(data=data)
 
         if serializer.is_valid():
