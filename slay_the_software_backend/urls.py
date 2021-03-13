@@ -40,9 +40,9 @@ urlpatterns += function_view
 
 # API account url
 api_account = [
-    path('api/account/login', views.LoginView.as_view()),
-    path('api/account/logout', views.LogoutView.as_view()),
-    path('api/account/create', views.RegisterView.as_view()),
+    path('api/account/login/', views.LoginView.as_view()),
+    path('api/account/logout/', views.LogoutView.as_view()),
+    path('api/account/create/', views.RegisterView.as_view()),
 ]
 urlpatterns += api_account
 urlpatterns += main_urls
