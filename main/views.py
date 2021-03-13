@@ -244,13 +244,9 @@ class CustomQuestionView(APIView):
         if serializer.is_valid():
             section = Section.objects.get(id=request.data['section'])
             # check if this Section belongs to a Custom World, and if this Section has fewer than 10 questions
-            # if both are true, then create a Level correspondent for this Question, and save
+            # if both are true, then save
             number_of_questions_in_section = len(Question.objects.filter(section=section))
             if section.world.is_custom_world and number_of_questions_in_section < 10:
-                # create Level
-                level_name = "Level %s" % (number_of_questions_in_section+1)
-                Level.objects.create(section=section, level_name=level_name)
-
                 serializer.save(created_by=request.user, difficulty=1, section=section)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
@@ -310,9 +306,15 @@ class CustomWorldView(APIView):
 
         if serializer.is_valid():
             serializer.save()
+
             # make section
             created_world = World.objects.get(world_name=data["world_name"])
-            Section.objects.create(world=created_world, sub_topic_name=created_world.world_name)
+            section = Section.objects.create(world=created_world, sub_topic_name=created_world.world_name)
+
+            # create Level
+            for i in range(10):
+                level_name = "Level %s" % (i + 1)
+                Level.objects.create(section=section, level_name=level_name)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
