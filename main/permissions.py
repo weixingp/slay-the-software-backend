@@ -1,5 +1,5 @@
 from rest_framework import permissions
-
+from main.models import Question, User
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
@@ -13,4 +13,9 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
             return True
 
         # Write permissions are only allowed to the owner of the snippet.
-        return obj.created_by == request.user
+        try:
+            return obj.created_by == request.user
+        except AttributeError: # Answer has no created_by attribute
+            # get User who created the Question that this Answer belongs to
+            user = obj.question.created_by
+            return user == request.user

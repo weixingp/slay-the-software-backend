@@ -106,7 +106,7 @@ class UserView(RetrieveAPIView):
 class LeaderboardView(APIView):
 
     def get(self, request):
-        world_id = request.META.get("HTTP_WORLD_ID")
+        world_id = request.query_params.get("world_id")
         print(request.META)
         if world_id:  # get leaderboard of a particular world
             try:
@@ -136,7 +136,7 @@ class LeaderboardView(APIView):
 
         # if user_id specified, return only the ranking of that user
         # don't need to apply offset/limit in this case
-        user_id = request.META.get("HTTP_USER_ID")
+        user_id = request.query_params.get("user_id")
         if user_id:
             try:
                 user_id = int(user_id)
@@ -152,7 +152,7 @@ class LeaderboardView(APIView):
                 return Response(status=status.HTTP_400_BAD_REQUEST)
         else:
             # apply offset, if any
-            offset = request.META.get('HTTP_OFFSET')
+            offset = request.query_params.get("offset")
             if offset:
                 try:
                     student_points = student_points[int(offset)-1:]
@@ -160,7 +160,7 @@ class LeaderboardView(APIView):
                     return Response(status=status.HTTP_400_BAD_REQUEST)
 
             # apply limit, if any
-            limit = request.META.get('HTTP_LIMIT')
+            limit = request.query_params.get("limit")
             if limit:
                 try:
                     student_points = student_points[:int(limit)]
@@ -367,6 +367,37 @@ class GetPositionView(APIView):
             "level_id": position.id
         }
         return Response(res)
+
+
+class EditAnswerView(APIView):
+
+    permission_classes = [IsOwnerOrReadOnly]
+
+    def get_answer(self, id):
+        try:
+            return Answer.objects.get(id=id)
+        except Answer.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def get(self, request, id):
+        answer = self.get_answer(id)
+        if isinstance(answer, Response):
+            return answer
+
+        serializer = AnswerSerializer(answer)
+        return Response(serializer.data)
+
+    def put(self, request, id):
+        answer = self.get_answer(id)
+        if isinstance(answer, Response):
+            return answer
+
+        serializer = AnswerSerializer(answer, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # KIV if need
 # class AssignmentView(APIView):
