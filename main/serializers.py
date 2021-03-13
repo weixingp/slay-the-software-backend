@@ -75,6 +75,7 @@ class AnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Answer
         fields = '__all__'
+        read_only_fields = ["is_correct"]
 
 class AnswerWithoutCorrectShownSerializer(serializers.ModelSerializer):
     class Meta:
