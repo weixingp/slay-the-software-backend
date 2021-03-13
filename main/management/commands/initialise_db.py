@@ -4,6 +4,7 @@ from django.utils import timezone
 import random
 from main import GameManager as gm
 
+
 class Command(BaseCommand):
     help = 'Initialises the database. Make sure to run "python manage.py flush" first.'
 
@@ -19,6 +20,7 @@ class Command(BaseCommand):
         self.__simulate_student1_progress()
         self.__simulate_student2_progress()
         self.__simulate_student3_progress()
+        self.__create_custom_worlds()
 
     def __create_superusers(self):
         self.stdout.write("Creating superusers...")
@@ -149,7 +151,7 @@ class Command(BaseCommand):
         partially_completed_world = World.objects.get(id=2)
         UserWorldProgressRecord.objects.create(user=student, world=partially_completed_world)
         # add level and question records for partially finished world
-        sections = Section.objects.filter(world=partially_completed_world)[:2] # change num of completed sections here
+        sections = Section.objects.filter(world=partially_completed_world)[:2]  # change num of completed sections here
         for section in sections:
             levels = Level.objects.filter(section=section)
             questions = Question.objects.filter(section=section)
@@ -178,7 +180,7 @@ class Command(BaseCommand):
         student = User.objects.get(username="josh")
 
         # add records for finished world
-        completed_worlds = World.objects.filter(id__range=(0, 2)) # change here for num of finished worlds
+        completed_worlds = World.objects.filter(id__range=(0, 2))  # change here for num of finished worlds
         for world in completed_worlds:
             UserWorldProgressRecord.objects.create(user=student, world=world, is_completed=True,
                                                    completed_time=self.completed_time)
@@ -265,5 +267,33 @@ class Command(BaseCommand):
         # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
         next_level = Level.objects.get(id=12)
         UserLevelProgressRecord.objects.create(user=student, level=next_level)
+
+        self.stdout.write("...complete")
+
+    def __create_custom_worlds(self):
+        '''
+        Creates a Custom World for each of the 3 Students
+        '''
+        self.stdout.write("Creating Custom Worlds...")
+
+        students = User.objects.filter(is_superuser=False, is_staff=False)
+        topics = ["Class Diagrams", "Sequence Diagrams", "Use Case Model"]
+        for i in range(len(students)):
+            # create world and section
+            student = students[i]
+            world_name = student.first_name + "'s World"
+            access_code = student.first_name[:3].upper() + "000"
+            custom_world = CustomWorld.objects.create(world_name=world_name, topic=topics[i], is_custom_world=True, access_code=access_code, created_by=student)
+            section = Section.objects.create(world=custom_world, sub_topic_name=topics[i])
+
+            # create 10 questions and levels
+            for i in range(10):
+                # create Level
+                level_name = "Custom Level " + str(i+1)
+                Level.objects.create(section=section, level_name=level_name)
+
+                # create Question
+                question_text = "Custom Question " + str(i+1)
+                Question.objects.create(question=question_text, section=section, difficulty="1", created_by=student)
 
         self.stdout.write("...complete")
