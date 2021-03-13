@@ -149,10 +149,17 @@ class CheckAnswerSerializer(serializers.Serializer):
 
         return {"answer": answer}
 
-#how to add section and created_by?
+class CustomWorldSerializer(serializers.ModelSerializer):
+    sections = SectionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = CustomWorld
+        fields = '__all__'
+
 class CreateQuestionSerializer(serializers.ModelSerializer):
     answers = AnswerSerializer(many=True)
     section = serializers.CharField(required=False)
+    difficulty = serializers.CharField(required=False)
     created_by = serializers.CharField(required=False)
     class Meta:
         model = Question
@@ -160,10 +167,13 @@ class CreateQuestionSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         answers_data = validated_data.pop('answers')
+        if len(answers_data) != 4:
+            raise NotFound(detail="Invalid number of answers")
         question = Question.objects.create(**validated_data)
         for answer_data in answers_data:
             Answer.objects.create(question=question, **answer_data)
         return question
+
 
 
 class CustomWorldSerializer(serializers.ModelSerializer):

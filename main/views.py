@@ -241,7 +241,8 @@ class CreateQuestionView(APIView):
     def post(self, request):
         serializer = CreateQuestionSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(created_by=request.user)
+            section = Section.objects.get(index=request.data['section'])
+            serializer.save(created_by=request.user, difficulty=1, section=section)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
