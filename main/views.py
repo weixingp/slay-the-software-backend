@@ -191,6 +191,8 @@ class WorldDetails(APIView):
 
     def get(self, request, id):
         world = self.get_object(id)
+        if isinstance(world, Response): # custom_world not found
+            return world
         serializer = WorldSerializer(world)
         return Response(serializer.data)
 
@@ -272,7 +274,7 @@ class CustomQuestionListView(APIView):
     def put(self, request, pk):
         if request.user == Question.objects.get(pk=pk).created_by:
             question = self.get_object(pk)
-            serializer = QuestionSerializer(question, data=request.data)
+            serializer = CreateQuestionSerializer(question, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -330,13 +332,17 @@ class CustomWorldDetails(APIView):
 
     def get(self, request, access_code):
         custom_world = self.get_object(access_code)
+        if isinstance(custom_world, Response): # custom_world not found
+            return custom_world
         serializer = CustomWorldSerializer(custom_world)
         return Response(serializer.data)
 
     def put(self, request, access_code):
         custom_world = self.get_object(access_code)
-        serializer = CustomWorldSerializer(custom_world, data=request.data, partial=True)
+        if isinstance(custom_world, Response): # custom_world not found
+            return custom_world
 
+        serializer = CustomWorldSerializer(custom_world, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
