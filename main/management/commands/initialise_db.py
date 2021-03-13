@@ -13,10 +13,10 @@ class Command(BaseCommand):
         self.completed_time = timezone.now() + timezone.timedelta(days=2)
 
     def handle(self, *args, **options):
-        self.__create_superusers()
-        self.__create_teachers()
-        self.__create_students()
-        self.__create_campaign_mode()
+        # self.__create_superusers()
+        # self.__create_teachers()
+        # self.__create_students()
+        # self.__create_campaign_mode()
         self.__simulate_student1_progress()
         self.__simulate_student2_progress()
         self.__simulate_student3_progress()
@@ -28,7 +28,7 @@ class Command(BaseCommand):
         User.objects.create_superuser(username="weixing", password="weixing123")
         User.objects.create_superuser(username="favian", password="favian123")
         User.objects.create_superuser(username="junwei", password="junwei123")
-        self.stdout.write("...complete")
+        self.stdout.write("...superusers created")
 
     def __create_teachers(self):
         self.stdout.write("Creating teachers...")
@@ -36,54 +36,55 @@ class Command(BaseCommand):
                                  is_staff=True)
         User.objects.create_user(username="zhenying", password="zhenyin123", first_name="Zhen Ying", last_name="Ngiam",
                                  is_staff=True)
-        self.stdout.write("...complete")
+        self.stdout.write("...teachers created")
 
     def __create_students(self):
         self.stdout.write("Creating students...")
         User.objects.create_user(username="wanqian", password="wanqian123", first_name="Wan", last_name="Qian")
         User.objects.create_user(username="josh", password="josh123", first_name="Josh", last_name="Lim")
         User.objects.create_user(username="shenrui", password="shenrui123", first_name="Shen Rui", last_name="Chong")
-        self.stdout.write("...complete")
+        self.stdout.write("...students created")
 
     def __create_campaign_mode(self):
         """
         Creates 3 Worlds for Campaign Mode.
-        Each World has 3 Sections, and each Section has 4 Levels.
+        Each World has 3 Sections, and each Section has 3 Levels.
+        Last Level of the first 2 Section is a Mini Boss Level.
+        Last Level of the 3rd and last Section is the Final Boss Level.
         """
         self.stdout.write("Creating data for Campaign Mode...")
-        aquila = World.objects.create(world_name="Aquila", topic="Requirements Analysis", index=1)
-        bootes = World.objects.create(world_name="Bootes", topic="Software Architecture Styles", index=2)
-        cassiopeia = World.objects.create(world_name="Cassiopeia", topic="Software Testing", index=3)
+        aquila = World.objects.create(world_name="Dusza", topic="Requirements Analysis", index=1)
+        bootes = World.objects.create(world_name="Wonders", topic="Software Architecture Styles", index=2)
+        cassiopeia = World.objects.create(world_name="Zeha", topic="Software Testing", index=3)
 
-        # create sections for aquila
+        # create sections for world 1
         self.__create_section(aquila, "Requirements Elicitation", 1, False)
         self.__create_section(aquila, "Conceptual Models", 2, False)
         self.__create_section(aquila, "Dynamic Models", 3, True)
 
-        # create sections for bootes
+        # create sections for world 2
         self.__create_section(bootes, "Individual Components Style", 4, False)
         self.__create_section(bootes, "Pipe-and-Filter Style", 5, False)
         self.__create_section(bootes, "Layered Style", 6, True)
 
-        # create sections for cassiopeia
+        # create sections for world 3
         self.__create_section(cassiopeia, "White Box Testing", 7, False)
         self.__create_section(cassiopeia, "Black Box Testing", 8, False)
         self.__create_section(cassiopeia, "User Acceptance Testing", 9, True)
-        self.stdout.write("...complete")
+        self.stdout.write("...all data for Campaign Mode created")
 
     def __create_section(self, world, sub_topic_name, index, has_final_boss):
         section = Section.objects.create(world=world, sub_topic_name=sub_topic_name, index=index)
 
         # create levels
-        Level.objects.create(section=section, level_name="Level One", index=index * 4 - 3)
-        Level.objects.create(section=section, level_name="Level Two", index=index * 4 - 2)
-        Level.objects.create(section=section, level_name="Level Three", index=index * 4 - 1)
+        Level.objects.create(section=section, level_name="Level One", index=index * 3 - 2)
+        Level.objects.create(section=section, level_name="Level Two", index=index * 3 - 1)
 
         if has_final_boss:
-            Level.objects.create(section=section, level_name="Final Boss Level", index=index * 4,
+            Level.objects.create(section=section, level_name="Final Boss Level", index=index * 3,
                                  is_final_boss_level=True)
         else:
-            Level.objects.create(section=section, level_name="Boss Level", index=index * 4, is_boss_level=True)
+            Level.objects.create(section=section, level_name="Boss Level", index=index * 3, is_boss_level=True)
 
         # create questions for this section
         self.__create_questions_and_answers(section, has_final_boss)
@@ -169,10 +170,10 @@ class Command(BaseCommand):
                                                   is_completed=True, completed_time=self.completed_time)
 
         # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
-        next_level = Level.objects.get(id=21)
+        next_level = Level.objects.get(id=16)
         UserLevelProgressRecord.objects.create(user=student, level=next_level)
 
-        self.stdout.write("...complete")
+        self.stdout.write("...finished simulating Student 1")
 
     def __simulate_student2_progress(self):
         self.stdout.write("Simulating Student 2...")
@@ -220,10 +221,10 @@ class Command(BaseCommand):
                                               is_completed=True, completed_time=self.completed_time)
 
         # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
-        next_level = Level.objects.get(id=28)
+        next_level = Level.objects.get(id=22)
         UserLevelProgressRecord.objects.create(user=student, level=next_level)
 
-        self.stdout.write("...complete")
+        self.stdout.write("...finished simulating Student 2")
 
     def __simulate_student3_progress(self):
         self.stdout.write("Simulating Student 3...")
@@ -265,10 +266,10 @@ class Command(BaseCommand):
                                               is_completed=True, completed_time=self.completed_time)
 
         # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
-        next_level = Level.objects.get(id=12)
+        next_level = Level.objects.get(id=10)
         UserLevelProgressRecord.objects.create(user=student, level=next_level)
 
-        self.stdout.write("...complete")
+        self.stdout.write("...finished simulating Student 3")
 
     def __create_custom_worlds(self):
         '''
@@ -302,4 +303,4 @@ class Command(BaseCommand):
                 Answer.objects.create(question=question, answer="Custom Answer 3")
                 Answer.objects.create(question=question, answer="Custom Answer 4", is_correct=True)
 
-        self.stdout.write("...complete")
+        self.stdout.write("...Custom Worlds created")

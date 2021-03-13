@@ -10,15 +10,15 @@ urlpatterns= [
 ]
 
 question_urls = [
-    path('api/questions/world', QuestionView.as_view()),
-    path('api/questions/world/check', CheckAnswerView.as_view()),
+    path('api/questions/world/', QuestionView.as_view()),
+    path('api/questions/world/check/', CheckAnswerView.as_view()),
     path('api/questions/', CustomQuestionView.as_view()),
     path('api/questions/<int:pk>/', CustomQuestionListView.as_view()),
-    path('api/questions/answers/<int:id>', EditAnswerView.as_view()),
+    path('api/questions/answers/<int:id>/', EditAnswerView.as_view()),
 ]
 
 position_urls = [
-    path('api/position', GetPositionView.as_view())
+    path('api/position/', GetPositionView.as_view())
 ]
 urlpatterns += position_urls
 urlpatterns += question_urls
