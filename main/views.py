@@ -233,22 +233,31 @@ class CheckAnswerView(APIView):
         return Response(res)
 
 
-class CreateQuestionView(APIView):
+class CustomQuestionView(APIView):
     def get(self, request):
         questions = Question.objects.filter(created_by=request.user)
-        serializer = QuestionSerializer(questions, many=True)
+        serializer = CreateQuestionSerializer(questions, many=True)
         return Response(serializer.data)
 
     def post(self, request):
         serializer = CreateQuestionSerializer(data=request.data)
         if serializer.is_valid():
-            section = Section.objects.get(index=request.data['section'])
-            serializer.save(created_by=request.user, difficulty=1, section=section)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            section = Section.objects.get(id=request.data['section'])
+            # check if this Section belongs to a Custom World, and if this Section has fewer than 10 questions
+            # if both are true, then create a Level correspondent for this Question, and save
+            number_of_questions_in_section = len(Question.objects.filter(section=section))
+            if section.world.is_custom_world and number_of_questions_in_section < 10:
+                # create Level
+                level_name = "Level %s" % (number_of_questions_in_section+1)
+                Level.objects.create(section=section, level_name=level_name)
+
+                serializer.save(created_by=request.user, difficulty=1, section=section)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
 
-class QuestionListView(APIView):
+class CustomQuestionListView(APIView):
 
     def get_object(self, pk):
         try:
@@ -259,7 +268,7 @@ class QuestionListView(APIView):
     def get(self, request, pk):
         if request.user == Question.objects.get(pk=pk).created_by:
             question = self.get_object(pk)
-            serializer = QuestionSerializer(question)
+            serializer = CreateQuestionSerializer(question)
             return Response(serializer.data)
         else:
             return Response(status=status.HTTP_403_FORBIDDEN)

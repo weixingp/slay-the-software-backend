@@ -12,8 +12,8 @@ urlpatterns= [
 question_urls = [
     path('api/questions/world', QuestionView.as_view()),
     path('api/questions/world/check', CheckAnswerView.as_view()),
-    path('api/questions/', CreateQuestionView.as_view()),
-    path('api/questions/<int:pk>/', QuestionListView.as_view()),
+    path('api/questions/', CustomQuestionView.as_view()),
+    path('api/questions/<int:pk>/', CustomQuestionListView.as_view()),
 ]
 
 position_urls = [
