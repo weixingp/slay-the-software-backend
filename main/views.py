@@ -204,15 +204,19 @@ class QuestionView(APIView):
         serializer = WorldValidateSerializer(data=request.GET)
         serializer.is_valid(raise_exception=True)
 
-        question, answers, record = gm.get_question_answer_in_main_world(serializer.validated_data['world'])
-        question_serializer = QuestionSerializer(question)
-        answers_serializer = AnswerWithoutCorrectShownSerializer(answers, many=True)
-        # question_record_serializer = QuestionRecordSerializer(record)
+        question_list = gm.get_question(serializer.validated_data['world'])
         res = {
-            "question": question_serializer.data['question'],
-            "answers": answers_serializer.data,
-            "record_id": record.id
+            "questions": [],
         }
+        for question in question_list:
+            question_serializer = QuestionSerializer(question)
+            answers_serializer = AnswerWithoutCorrectShownSerializer(question["answers"], many=True)
+            temp = {
+                "question": question_serializer.data['question'],
+                "answers": answers_serializer.data,
+            }
+            res["questions"].append(temp)
+
         return Response(res)
 
 
