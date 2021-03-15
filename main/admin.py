@@ -53,6 +53,8 @@ class CustomAdminSite(admin.AdminSite):
         Retrieve the following statistics:
         - Per World in Campaign Mode, retrieve the average score (gained per Question in the Section) and total score per Section
         - Per Section, display each Question and the number of times it was answered correctly and incorrectly
+
+        TODO: only display teacher's class
         """
         this_teacher = request.user
         # student_points = student_records.values('user_id', 'user__first_name', 'user__last_name') \
@@ -67,8 +69,12 @@ class CustomAdminSite(admin.AdminSite):
                 # calculate total and avg points
                 levels = Level.objects.filter(section=section)
                 question_records = QuestionRecord.objects.filter(level__in=levels)
-                avg_points = question_records.aggregate(Avg('points_change'))["points_change__avg"]
-                total_points = question_records.aggregate(Sum('points_change'))["points_change__sum"]
+                if len(question_records) == 0:
+                    avg_points = 0
+                    total_points = 0
+                else:
+                    avg_points = question_records.aggregate(Avg('points_change'))["points_change__avg"]
+                    total_points = question_records.aggregate(Sum('points_change'))["points_change__sum"]
 
                 # get stats for each question in the section
                 questions_stats = []
@@ -87,12 +93,14 @@ class CustomAdminSite(admin.AdminSite):
                     "sub_topic_name": section.sub_topic_name,
                     "avg_points": avg_points,
                     "total_points": total_points,
-                    "questions_stats": questions_stats
+                    "questions": questions_stats
                 })
 
             campaign_mode_stats.append({"world_name": world.world_name, "sections": sections_stats})
 
         context = {"campaign_mode_stats": campaign_mode_stats}
+
+        # context = {"key": "value"}
         return render(request, "main/campaign_statistics.html", context)
 
 
