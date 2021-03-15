@@ -162,6 +162,7 @@ class CreateQuestionSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         truecount=0
         answers_data = validated_data.pop('answers')
+        print(answers_data)
         if len(answers_data) != 4:
             raise NotFound(detail="Invalid number of answers")
         print(answers_data)
