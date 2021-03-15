@@ -4,6 +4,11 @@ from django.utils import timezone
 import random
 from main import GameManager as gm
 
+points_map = {
+    "1": 5,
+    "2": 10,
+    "3": 15
+}
 
 class Command(BaseCommand):
     help = 'Initialises the database. Make sure to run "python manage.py flush" first.'
@@ -13,10 +18,10 @@ class Command(BaseCommand):
         self.completed_time = timezone.now() + timezone.timedelta(days=2)
 
     def handle(self, *args, **options):
-        # self.__create_superusers()
-        # self.__create_teachers()
-        # self.__create_students()
-        # self.__create_campaign_mode()
+        self.__create_superusers()
+        self.__create_teachers()
+        self.__create_students()
+        self.__create_campaign_mode()
         self.__simulate_student1_progress()
         self.__simulate_student2_progress()
         self.__simulate_student3_progress()
@@ -146,7 +151,7 @@ class Command(BaseCommand):
                 for i in range(num_of_questions_to_add):
                     question = random.choice(questions)
                     QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
-                                                  points_change=int(question.difficulty), reason="Correct",
+                                                  points_change=points_map[question.difficulty], reason="Correct",
                                                   is_completed=True, completed_time=self.completed_time)
         # add records for partially finished world
         partially_completed_world = World.objects.get(id=2)
@@ -166,7 +171,7 @@ class Command(BaseCommand):
                 for i in range(num_of_questions_to_add):
                     question = random.choice(questions)
                     QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
-                                                  points_change=int(question.difficulty), reason="Correct",
+                                                  points_change=points_map[question.difficulty], reason="Correct",
                                                   is_completed=True, completed_time=self.completed_time)
 
         # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
@@ -200,7 +205,7 @@ class Command(BaseCommand):
                     for i in range(num_of_questions_to_add):
                         question = random.choice(questions)
                         QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
-                                                      points_change=int(question.difficulty), reason="Correct",
+                                                      points_change=points_map[question.difficulty], reason="Correct",
                                                       is_completed=True, completed_time=self.completed_time)
 
         # add records for partially finished world
@@ -217,7 +222,7 @@ class Command(BaseCommand):
             for i in range(num_of_questions_to_add):
                 question = random.choice(questions)
                 QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
-                                              points_change=int(question.difficulty), reason="Correct",
+                                              points_change=points_map[question.difficulty], reason="Correct",
                                               is_completed=True, completed_time=self.completed_time)
 
         # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
@@ -249,7 +254,7 @@ class Command(BaseCommand):
                 for i in range(num_of_questions_to_add):
                     question = random.choice(questions)
                     QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
-                                                  points_change=int(question.difficulty), reason="Correct",
+                                                  points_change=points_map[question.difficulty], reason="Correct",
                                                   is_completed=True, completed_time=self.completed_time)
         # add level and question records for last incomplete section
         section = Section.objects.filter(world=partially_completed_world)[2]
@@ -262,7 +267,7 @@ class Command(BaseCommand):
             for i in range(num_of_questions_to_add):
                 question = random.choice(questions)
                 QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
-                                              points_change=int(question.difficulty), reason="Correct",
+                                              points_change=points_map[question.difficulty], reason="Correct",
                                               is_completed=True, completed_time=self.completed_time)
 
         # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
