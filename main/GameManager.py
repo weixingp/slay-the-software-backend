@@ -2,6 +2,7 @@ import random
 from math import ceil
 from random import randint
 
+from django.db.models import Sum
 from django.utils.timezone import now
 from rest_framework.exceptions import PermissionDenied, NotFound, ValidationError
 
@@ -106,7 +107,20 @@ class GameManager:
 
     def get_user_points_by_world(self, world):
         # To be implemented
-        return 1
+        if not world:
+            position = self.get_user_position_in_world()
+            world = position.section.world
+
+        records = QuestionRecord.objects.filter(
+            user=self.user,
+            level__section__world=world,
+        )
+        if not records:
+            points = 0
+        else:
+            points = records.aggregate(Sum('points_change'))
+            points = points['points_change__sum']
+        return points
 
     def new_boss_question_record_session(self, level, questions):
         if not level.is_final_boss_level:
@@ -237,9 +251,17 @@ class GameManager:
         if answer.question.id != record.question.id:
             raise PermissionDenied(detail="You are not allowed to check this answer.")
 
+        # Points change
+        curr_points = self.get_user_points_by_world(world)
+        points = self.difficulty_points_map[answer.is_correct][record.question.difficulty]
+
+        # Do not let points fall below 0
+        if curr_points + points < 0:
+            points = -curr_points
+
         # Update the question record
         record.is_completed = True
-        record.points_change = self.difficulty_points_map[answer.is_correct][record.question.difficulty]
+        record.points_change = points
         # record.points_change = -10
         record.completed_time = now()
         record.is_correct = answer.is_correct
@@ -332,7 +354,6 @@ class GameManager:
         # If unanswered question is less than 10
         if len(pks) < total_qn:
             diff = total_qn - len(pks)
-            print(diff)
             all_pks = Question.objects \
                 .filter(section__id__in=section_list) \
                 .values_list('pk', flat=True)

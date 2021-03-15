@@ -197,6 +197,19 @@ class WorldDetails(APIView):
         return Response(serializer.data)
 
 
+class UserScore(APIView):
+    def get(self, request):
+        user = request.user
+        gm = GameManager(user)
+        serializer = WorldValidateSerializer(data=request.GET)
+        serializer.is_valid(raise_exception=True)
+        user_points = gm.get_user_points_by_world(serializer.validated_data['world'])
+        res = {
+            "points": user_points,
+        }
+        return Response(res)
+
+
 class QuestionView(APIView):
     def get(self, request):
         user = request.user

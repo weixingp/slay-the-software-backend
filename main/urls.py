@@ -17,8 +17,13 @@ question_urls = [
     path('api/questions/answers/<int:id>/', EditAnswerView.as_view()),
 ]
 
+misc_urls = [
+    path('api/score/', UserScore.as_view()),
+]
+
 position_urls = [
     path('api/position/', GetPositionView.as_view())
 ]
 urlpatterns += position_urls
 urlpatterns += question_urls
+urlpatterns += misc_urls
