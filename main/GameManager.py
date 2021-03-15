@@ -360,7 +360,8 @@ class GameManager:
             answers = Answer.objects.filter(question=question)
             temp = {
                 "question": question,
-                "answers": answers
+                "answers": answers,
+                "record_id": item.id
             }
             res.append(temp)
         return res
