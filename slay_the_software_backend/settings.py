@@ -115,21 +115,21 @@ REST_FRAMEWORK = {
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
     'default': {
-        'NAME': os.getenv("MYSQL_dbname"),
-        'HOST': os.getenv("MYSQL_host"),
-        'PORT': os.getenv("MYSQL_port"),
-        'ENGINE': 'mysql.connector.django',
-        'USER': os.getenv('MYSQL_username'),
-        'PASSWORD': os.getenv("MYSQL_password"),
-        'OPTIONS': {
-            # 'autocommit': True,
-        },
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
+    # 'default': {
+    #     'NAME': os.getenv("MYSQL_dbname"),
+    #     'HOST': os.getenv("MYSQL_host"),
+    #     'PORT': os.getenv("MYSQL_port"),
+    #     'ENGINE': 'mysql.connector.django',
+    #     'USER': os.getenv('MYSQL_username'),
+    #     'PASSWORD': os.getenv("MYSQL_password"),
+    #     'OPTIONS': {
+    #         # 'autocommit': True,
+    #     },
+    # }
 }
 
 

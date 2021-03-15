@@ -119,17 +119,18 @@ class LeaderboardView(APIView):
             for section_id in section_ids:
                 levels = Level.objects.filter(section_id=section_id)  # get levels in the section
                 level_ids += [level.id for level in levels]  # extract level ids
-            student_records = QuestionRecord.objects.filter(level_id__in=level_ids)  # extract level records which fall in level_ids
+            student_records = QuestionRecord.objects.filter(
+                level_id__in=level_ids)  # extract level records which fall in level_ids
         else:  # get overall leaderboard
             student_records = QuestionRecord.objects.all()
 
         # sum up points for each student and sort in desc order
-        student_points = student_records.values('user_id', 'user__first_name', 'user__last_name')\
+        student_points = student_records.values('user_id', 'user__first_name', 'user__last_name') \
             .annotate(points=Sum('points_change')).order_by('points').reverse()
 
         # do cleaning of queryset
-        for i in range(1, len(student_points)+1):
-            student = student_points[i-1]
+        for i in range(1, len(student_points) + 1):
+            student = student_points[i - 1]
             student["first_name"] = student.pop("user__first_name")
             student["last_name"] = student.pop("user__last_name")
             student["rank"] = i
@@ -155,7 +156,7 @@ class LeaderboardView(APIView):
             offset = request.query_params.get("offset")
             if offset:
                 try:
-                    student_points = student_points[int(offset)-1:]
+                    student_points = student_points[int(offset) - 1:]
                 except (ValueError, AssertionError):
                     return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -170,7 +171,6 @@ class LeaderboardView(APIView):
             serializer = LeaderboardSerializer(student_points, many=True)
 
         return Response(serializer.data)
-
 
 
 class WorldView(APIView):
@@ -191,7 +191,7 @@ class WorldDetails(APIView):
 
     def get(self, request, id):
         world = self.get_object(id)
-        if isinstance(world, Response): # custom_world not found
+        if isinstance(world, Response):  # custom_world not found
             return world
         serializer = WorldSerializer(world)
         return Response(serializer.data)
@@ -204,12 +204,12 @@ class QuestionView(APIView):
         serializer = WorldValidateSerializer(data=request.GET)
         serializer.is_valid(raise_exception=True)
 
-        question_list = gm.get_question(serializer.validated_data['world'])
+        question_list = gm.get_questions(serializer.validated_data['world'])
         res = {
             "questions": [],
         }
         for question in question_list:
-            question_serializer = QuestionSerializer(question)
+            question_serializer = QuestionSerializer(question['question'])
             answers_serializer = AnswerWithoutCorrectShownSerializer(question["answers"], many=True)
             temp = {
                 "question": question_serializer.data['question'],
@@ -336,14 +336,14 @@ class CustomWorldDetails(APIView):
 
     def get(self, request, access_code):
         custom_world = self.get_object(access_code)
-        if isinstance(custom_world, Response): # custom_world not found
+        if isinstance(custom_world, Response):  # custom_world not found
             return custom_world
         serializer = CustomWorldSerializer(custom_world)
         return Response(serializer.data)
 
     def put(self, request, access_code):
         custom_world = self.get_object(access_code)
-        if isinstance(custom_world, Response): # custom_world not found
+        if isinstance(custom_world, Response):  # custom_world not found
             return custom_world
 
         serializer = CustomWorldSerializer(custom_world, data=request.data, partial=True)
@@ -374,7 +374,6 @@ class GetPositionView(APIView):
 
 
 class EditAnswerView(APIView):
-
     permission_classes = [IsOwnerOrReadOnly]
 
     def get_answer(self, id):
@@ -401,7 +400,6 @@ class EditAnswerView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # KIV if need
 # class AssignmentView(APIView):

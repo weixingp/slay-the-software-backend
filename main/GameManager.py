@@ -119,6 +119,7 @@ class GameManager:
 
         completed = records.filter(is_completed=True)
         uncompleted = records.filter(is_completed=False)
+
         if completed and uncompleted:
             raise ValidationError(detail="Database data mismatch, please contact Admin.")
 
@@ -131,7 +132,7 @@ class GameManager:
             raise PermissionDenied(detail="You are not allowed to get questions, world completed.")
 
         record_list = []
-        if uncompleted:
+        if not records:
             for question in questions:
                 record = QuestionRecord.objects.create(
                     user=self.user,
@@ -139,8 +140,10 @@ class GameManager:
                     question=question,
                 )
                 record_list.append(record)
+            return record_list
+        else:
+            return records
 
-        return record_list
 
     def new_question_record_session(self, level, question):
         records = QuestionRecord.objects.filter(
@@ -313,9 +316,8 @@ class GameManager:
         return res
 
     def get_boss_level_question_answer(self, position):
-        total_qn = 10
-        section_list = list(Section.objects.filter(world=position.section.world).values_list('id'))
-        
+        total_qn = self.boss_level_qn
+        section_list = list(Section.objects.filter(world=position.section.world).values_list('id', flat=True))
         # Get answered questions of user.
         answered_question = QuestionRecord.objects \
             .filter(user=self.user, is_correct=True) \
@@ -330,6 +332,7 @@ class GameManager:
         # If unanswered question is less than 10
         if len(pks) < total_qn:
             diff = total_qn - len(pks)
+            print(diff)
             all_pks = Question.objects \
                 .filter(section__id__in=section_list) \
                 .values_list('pk', flat=True)
@@ -344,20 +347,25 @@ class GameManager:
 
             pks += to_add
 
+        random_qns = []
         random_ids = random.sample(pks, k=total_qn)
-        random_qns = Question.objects.get(pk__in=random_ids)
-        self.new_boss_question_record_session(level=position, questions=random_qns)
+        for qn_id in random_ids:
+            qn = Question.objects.get(pk=qn_id)
+            random_qns.append(qn)
+
+        records = self.new_boss_question_record_session(level=position, questions=random_qns)
         res = []
-        for question in random_qns:
+        for item in records:
+            question = item.question
             answers = Answer.objects.filter(question=question)
             temp = {
                 "question": question,
-                "answer": answers
+                "answers": answers
             }
             res.append(temp)
         return res
 
-    def get_question(self, world):
+    def get_questions(self, world):
         position = self.get_user_position_in_world(world)
         if position.is_final_boss_level:
             question_list = self.get_boss_level_question_answer(position)
