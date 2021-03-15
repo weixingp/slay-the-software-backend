@@ -210,6 +210,29 @@ class UserScore(APIView):
         return Response(res)
 
 
+class QuestionDifficulty(APIView):
+    def get(self, request):
+        user = request.user
+        gm = GameManager(user)
+        serializer = WorldValidateSerializer(data=request.GET)
+        serializer.is_valid(raise_exception=True)
+        user_difficulty = gm.get_qn_difficulty_by_world(serializer.validated_data['world'])
+        if user_difficulty == "1":
+            difficulty_text = "Easy"
+        elif user_difficulty == "2":
+            difficulty_text = "Normal"
+        elif user_difficulty == "3":
+            difficulty_text = "Hard"
+        else:
+            difficulty_text = "Unknown"
+
+        res = {
+            "difficulty_id": user_difficulty,
+            "difficulty_text": difficulty_text,
+        }
+        return Response(res)
+
+
 class QuestionView(APIView):
     def get(self, request):
         user = request.user

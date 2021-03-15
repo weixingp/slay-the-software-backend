@@ -19,6 +19,7 @@ question_urls = [
 
 misc_urls = [
     path('api/score/', UserScore.as_view()),
+    path('api/difficulty/', QuestionDifficulty.as_view())
 ]
 
 position_urls = [

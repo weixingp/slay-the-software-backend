@@ -106,7 +106,6 @@ class GameManager:
             return False
 
     def get_user_points_by_world(self, world):
-        # To be implemented
         if not world:
             position = self.get_user_position_in_world()
             world = position.section.world
@@ -121,6 +120,25 @@ class GameManager:
             points = records.aggregate(Sum('points_change'))
             points = points['points_change__sum']
         return points
+
+    def get_qn_difficulty_by_world(self, world):
+        if not world:
+            position = self.get_user_position_in_world()
+            world = position.section.world
+
+        easy_qn_threshold = 20
+        normal_qn_threshold = 65
+
+        points = self.get_user_points_by_world(world)
+        # 1 -> Easy, 2 -> Normal, 3 -> Hard
+        if points <= easy_qn_threshold:
+            difficulty = "1"
+        elif points <= normal_qn_threshold:
+            difficulty = "2"
+        else:
+            difficulty = "3"
+
+        return difficulty
 
     def new_boss_question_record_session(self, level, questions):
         if not level.is_final_boss_level:
@@ -281,16 +299,8 @@ class GameManager:
     def get_single_question_answer(self, position):
 
         section = position.section
-        easy_qn_threshold = 20
-        normal_qn_threshold = 65
-        points = self.get_user_points_by_world(section.world)
-        # 1 -> Easy, 2 -> Normal, 3 -> Hard
-        if points <= easy_qn_threshold:
-            difficulty = "1"
-        elif points <= normal_qn_threshold:
-            difficulty = "2"
-        else:
-            difficulty = "3"
+
+        difficulty = self.get_qn_difficulty_by_world(section.world)
 
         # Get answered questions of user.
         answered_question = QuestionRecord.objects \
