@@ -49,23 +49,50 @@ class CustomAdminSite(admin.AdminSite):
         return custom_urls + urls
 
     def campaign_statistic_view(self, request):
+        """
+        Retrieve the following statistics:
+        - Per World in Campaign Mode, retrieve the average score (gained per Question in the Section) and total score per Section
+        - Per Section, display each Question and the number of times it was answered correctly and incorrectly
+        """
         this_teacher = request.user
-        student_records = QuestionRecord.objects.all()
         # student_points = student_records.values('user_id', 'user__first_name', 'user__last_name') \
         #     .annotate(points=Sum('points_change'))
+
+        campaign_mode_stats = []
         campaign_worlds = World.objects.filter(is_custom_world=False)
         for world in campaign_worlds:
             sections = Section.objects.filter(world=world)
+            sections_stats = []
             for section in sections:
-                levels = Level.objects.get(section=section)
-                for level in levels:
-                    question_records = Question.objects.filter(level=level)
-                    avg_points = question_records.aggregate(Avg('points_change'))["points_change__avg"]
+                # calculate total and avg points
+                levels = Level.objects.filter(section=section)
+                question_records = QuestionRecord.objects.filter(level__in=levels)
+                avg_points = question_records.aggregate(Avg('points_change'))["points_change__avg"]
+                total_points = question_records.aggregate(Sum('points_change'))["points_change__sum"]
 
+                # get stats for each question in the section
+                questions_stats = []
+                questions = Question.objects.filter(section=section)
+                for question in questions:
+                    question_record = QuestionRecord.objects.filter(question=question)
+                    num_correct = len(question_record.filter(is_correct=True))
+                    num_incorrect = len(question_record.filter(is_correct=False))
+                    questions_stats.append({
+                        "question": question.question,
+                        "num_correct": num_correct,
+                        "num_incorrect": num_incorrect,
+                    })
 
+                sections_stats.append({
+                    "sub_topic_name": section.sub_topic_name,
+                    "avg_points": avg_points,
+                    "total_points": total_points,
+                    "questions_stats": questions_stats
+                })
 
+            campaign_mode_stats.append({"world_name": world.world_name, "sections": sections_stats})
 
-        context = {"student_points": "placeholder"}
+        context = {"campaign_mode_stats": campaign_mode_stats}
         return render(request, "main/campaign_statistics.html", context)
 
 
