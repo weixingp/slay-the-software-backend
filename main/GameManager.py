@@ -176,7 +176,6 @@ class GameManager:
         else:
             return records
 
-
     def new_question_record_session(self, level, question):
         records = QuestionRecord.objects.filter(
             user=self.user,
@@ -296,7 +295,10 @@ class GameManager:
             self.unlock_level()
         return record.is_correct, record.points_change
 
-    def get_single_question_answer(self, position):
+    def check_answers_for_boss_level(self, answer_set):
+        pass
+
+    def get_single_question_set(self, position):
 
         section = position.section
 
@@ -344,6 +346,7 @@ class GameManager:
         res = [{
             "question": question,
             "answers": answers,
+            "record_id": record.id,
         }]
         return res
 
@@ -355,9 +358,9 @@ class GameManager:
             .filter(user=self.user, is_correct=True) \
             .values_list('question_id', flat=True)
 
-        pks = Question.objects\
-            .filter(section__id__in=section_list)\
-            .exclude(id__in=list(answered_question))\
+        pks = Question.objects \
+            .filter(section__id__in=section_list) \
+            .exclude(id__in=list(answered_question)) \
             .values_list('pk', flat=True)
         pks = list(pks)
 
@@ -402,6 +405,6 @@ class GameManager:
         if position.is_final_boss_level:
             question_list = self.get_boss_level_question_answer(position)
         else:
-            question_list = self.get_single_question_answer(position)
+            question_list = self.get_single_question_set(position)
 
         return question_list
