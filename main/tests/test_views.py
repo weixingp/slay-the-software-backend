@@ -19,7 +19,7 @@ class TestViews(TestSetUp):
         response = self.client.post(self.question_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_createquestion_fail_is_correct(self):
+    def test_postCustomQuestion_fail_is_correct(self):
         data = {"question": "question1",
                 "section": "1",
                 "answers": [
@@ -31,7 +31,7 @@ class TestViews(TestSetUp):
         response = self.client.post(self.question_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_createquestion_fail_number_of_answers(self):
+    def test_postCustomQuestion_fail_number_of_answers(self):
         data = {"question": "question1",
                 "section": "1",
                 "answers": [
