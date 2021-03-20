@@ -9,8 +9,8 @@ from rest_framework.authtoken.models import Token
 # Register your models here.
 
 class AssignmentAdmin(admin.ModelAdmin):
-    list_display = ('custom_world', 'class_index', 'name', 'deadline', 'date_created', 'date_modified',)
-    list_filter = ('class_index',)
+    list_display = ('custom_world', 'class_group', 'name', 'deadline', 'date_created', 'date_modified',)
+    list_filter = ('class_group',)
 
 class AnswerAdmin(admin.TabularInline):
     model = Answer
@@ -30,16 +30,22 @@ class CustomAdminSite(admin.AdminSite):
         app_list = super().get_app_list(request)
         app_list += [
             {
-                "name": "Statistics",
+                "name": "Full Statistics",
                 "app_label": "main",
                 # "app_url": "/admin/test_view",
                 "models": [
                     {
                         "name": "Campaign Mode",
                         "object_name": "TestModel",
-                        "admin_url": "/admin/campaign_statistics",
+                        "admin_url": "/admin/campaign_statistics/",
                         "view_only": True,
-                    }
+                    },
+                    {
+                        "name": "Assignments",
+                        "object_name": "TestModel",
+                        "admin_url": "/admin/assignment_statistics",
+                        "view_only": True,
+                    },
                 ],
             }
         ]
@@ -48,23 +54,20 @@ class CustomAdminSite(admin.AdminSite):
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path('campaign_statistics/', self.admin_view(self.campaign_statistic_view))
+            path('campaign_statistics/', self.admin_view(self.campaign_statistics_view)),
+            path('campaign_statistics/<str:class_name>/', self.admin_view(self.campaign_statistics_view))
+            # path('assignment_statistics/', self.admin_view(self.assignment_statistics_view)),
         ]
         return custom_urls + urls
 
-    def campaign_statistic_view(self, request):
+    def campaign_statistics_view(self, request, class_name=None):
         """
         Retrieve the following statistics:
         - Per World in Campaign Mode, retrieve the average score (gained per Question in the Section) and total score per Section
         - Per Section, display each Question and the number of times it was answered correctly and incorrectly
-
-        TODO: only display teacher's class
         """
-        this_teacher = request.user
-        # student_points = student_records.values('user_id', 'user__first_name', 'user__last_name') \
-        #     .annotate(points=Sum('points_change'))
 
-        campaign_mode_stats = []
+        campaign_mode_stats = [] # array of worlds and their stats
         campaign_worlds = World.objects.filter(is_custom_world=False)
         for world in campaign_worlds:
             sections = Section.objects.filter(world=world)
@@ -73,11 +76,19 @@ class CustomAdminSite(admin.AdminSite):
                 # calculate total and avg points
                 levels = Level.objects.filter(section=section)
                 question_records = QuestionRecord.objects.filter(level__in=levels)
+
+                # retrieve stats of students in given class, if any
+                if class_name:
+                    class_group = Class.objects.get(class_name=class_name)
+                    students = [student_profile.student for student_profile in
+                                StudentProfile.objects.filter(class_group=class_group)]
+                    question_records = question_records.filter(user__in=students)
+
                 if len(question_records) == 0:
                     avg_points = 0
                     total_points = 0
                 else:
-                    avg_points = question_records.aggregate(Avg('points_change'))["points_change__avg"]
+                    avg_points = round(question_records.aggregate(Avg('points_change'))["points_change__avg"], 2)
                     total_points = question_records.aggregate(Sum('points_change'))["points_change__sum"]
 
                 # get stats for each question in the section
@@ -85,6 +96,14 @@ class CustomAdminSite(admin.AdminSite):
                 questions = Question.objects.filter(section=section)
                 for question in questions:
                     question_record = QuestionRecord.objects.filter(question=question)
+
+                    # retrieve stats of students in given class, if any
+                    if class_name:
+                        class_group = Class.objects.get(class_name=class_name)
+                        students = [student_profile.student for student_profile in
+                                    StudentProfile.objects.filter(class_group=class_group)]
+                        question_record = question_record.filter(user__in=students)
+
                     num_correct = len(question_record.filter(is_correct=True))
                     num_incorrect = len(question_record.filter(is_correct=False))
                     questions_stats.append({
@@ -103,9 +122,16 @@ class CustomAdminSite(admin.AdminSite):
             campaign_mode_stats.append({"world_name": world.world_name, "sections": sections_stats})
 
         context = {"campaign_mode_stats": campaign_mode_stats}
+        if class_name:
+            context["group"] = class_name
+        else:
+            context["group"] = "All"
 
         # context = {"key": "value"}
         return render(request, "main/campaign_statistics.html", context)
+
+    # def assignment_statistics_view(self):
+
 
 
 
