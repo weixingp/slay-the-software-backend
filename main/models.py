@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, User
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, User, Group
 from django.db import models
 from django.utils import timezone
 
@@ -78,9 +78,17 @@ class CustomWorld(World):
         return "%s|%s" % (self.world_name, self.created_by)
 
 
+class Class(models.Model):
+    teacher = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="classes")
+    class_name = models.CharField(max_length=30)
+
+    def __str__(self):
+        return self.class_name
+
+
 class Assignment(models.Model):
     custom_world = models.OneToOneField(CustomWorld, on_delete=models.CASCADE, primary_key=True)
-    class_index = models.CharField(max_length=30)
+    class_group = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="assignments")
     name = models.CharField(max_length=30)
     deadline = models.DateTimeField(auto_now=False)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -88,7 +96,7 @@ class Assignment(models.Model):
 
     # Object name for display in admin panel
     def __str__(self):
-        return "%s|%s" % (self.custom_world, self.class_index)
+        return "%s|%s" % (self.custom_world, self.class_group)
 
 
 class Level(models.Model):
@@ -155,3 +163,12 @@ class UserLevelProgressRecord(models.Model):
 
     def __str__(self):
         return "%s|%s|%s" % (self.user.first_name, self.level.level_name, self.is_completed)
+
+
+class StudentProfile(models.Model):
+    student = models.OneToOneField(User, on_delete=models.CASCADE, related_name="student_profile")
+    year_of_study = models.IntegerField()
+    class_group = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, related_name="students")
+
+    def __str__(self):
+        return self.student.first_name + " " + self.student.last_name + "|" + self.class_group.class_name

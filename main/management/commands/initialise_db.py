@@ -1,4 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from main.models import *
 from django.utils import timezone
 import random
@@ -16,6 +18,7 @@ class Command(BaseCommand):
     def __init__(self):
         super().__init__()
         self.completed_time = timezone.now() + timezone.timedelta(days=2)
+        self.assignment_deadline = timezone.now() + timezone.timedelta(days=7)
 
     def handle(self, *args, **options):
         self.__create_superusers()
@@ -26,6 +29,9 @@ class Command(BaseCommand):
         self.__simulate_student2_progress()
         self.__simulate_student3_progress()
         self.__create_custom_worlds()
+        self.__create_assignments()
+        #self.__simulate_assignment_playthroughs()
+
 
     def __create_superusers(self):
         self.stdout.write("Creating superusers...")
@@ -37,17 +43,43 @@ class Command(BaseCommand):
 
     def __create_teachers(self):
         self.stdout.write("Creating teachers...")
-        User.objects.create_user(username="nicole", password="nicole123", first_name="Nicole", last_name="Tan",
-                                 is_staff=True)
-        User.objects.create_user(username="zhenying", password="zhenyin123", first_name="Zhen Ying", last_name="Ngiam",
-                                 is_staff=True)
+
+        # create teacher group and set permissions
+        teacher_group = Group.objects.create(name="Teachers")
+        permission_verbs = ["add", "change", "delete", "view"]
+        required_models = ["user", "question", "customworld", "assignment"]
+        for model in required_models:
+            for verb in permission_verbs:
+                teacher_group.permissions.add(
+                    Permission.objects.get(codename=verb+"_"+model)
+                )
+
+        teachers = [{"username": "nicole", "password": "nicole123", "first_name": "Nicole", "last_name": "Tan", "class": "SSP1"},
+                    {"username": "zhenying", "password": "zhenyin123", "first_name": "Zhen Ying", "last_name": "Ngiam", "class": "SSP2"}]
+        for teacher in teachers:
+            created_teacher = User.objects.create_user(username=teacher["username"], password=teacher["password"],
+                                                       first_name=teacher["first_name"], last_name=teacher["last_name"],
+                                                       is_staff=True)
+            teacher_group.user_set.add(created_teacher)
+            Class.objects.create(teacher=created_teacher, class_name=teacher["class"])
+
         self.stdout.write("...teachers created")
 
     def __create_students(self):
         self.stdout.write("Creating students...")
-        User.objects.create_user(username="wanqian", password="wanqian123", first_name="Wan", last_name="Qian")
-        User.objects.create_user(username="josh", password="josh123", first_name="Josh", last_name="Lim")
-        User.objects.create_user(username="shenrui", password="shenrui123", first_name="Shen Rui", last_name="Chong")
+        students = [{"username": "wanqian", "password": "wanqian123", "first_name": "Wan", "last_name": "Qian", "class": "SSP1"},
+                    {"username": "josh", "password": "josh123", "first_name": "Josh", "last_name": "Lim", "class": "SSP1"},
+                    {"username": "shenrui", "password": "shenrui123", "first_name": "Shen Rui", "last_name": "Chong", "class": "SSP1"},
+                    {"username": "tom", "password": "tom123", "first_name": "Tom", "last_name": "Tan", "class": "SSP2"},
+                    {"username": "mary", "password": "mary123", "first_name": "Mary", "last_name": "Lee", "class": "SSP2"},
+                    {"username": "jerry", "password": "jerry123", "first_name": "Jerry", "last_name": "Chua", "class": "SSP2"},
+                    {"username": "ayden", "password": "ayden123", "first_name": "Ayden", "last_name": "Wong", "class": "SSP2"},
+                    {"username": "jayden", "password": "jayden123", "first_name": "Jayden", "last_name": "Seah", "class": "SSP2"},]
+        for student in students:
+            created_student = User.objects.create_user(username=student["username"], password=student["password"],
+                                                       first_name=student["first_name"], last_name=student["last_name"])
+            class_group = Class.objects.get(class_name=student["class"])
+            StudentProfile.objects.create(student=created_student, year_of_study=2, class_group=class_group)
         self.stdout.write("...students created")
 
     def __create_campaign_mode(self):
@@ -282,7 +314,7 @@ class Command(BaseCommand):
         '''
         self.stdout.write("Creating Custom Worlds...")
 
-        students = User.objects.filter(is_superuser=False, is_staff=False)
+        students = User.objects.filter(is_superuser=False, is_staff=False)[:3]
         topics = ["Class Diagrams", "Sequence Diagrams", "Use Case Model"]
         for i in range(len(students)):
             # create world and section
@@ -292,16 +324,17 @@ class Command(BaseCommand):
             custom_world = CustomWorld.objects.create(world_name=world_name, topic=topics[i], is_custom_world=True, access_code=access_code, created_by=student)
             section = Section.objects.create(world=custom_world, sub_topic_name=topics[i])
 
-            # create 10 questions and levels
-            for i in range(10):
+            # create 3 levels
+            for i in range(3):
                 # create Level
-                level_name = "Custom Level " + str(i+1)
+                level_name = "Custom Level " + str(i + 1)
                 Level.objects.create(section=section, level_name=level_name)
 
-                # create Question
-                question_text = "Custom Question " + str(i+1)
-                question = Question.objects.create(question=question_text, section=section, difficulty="1", created_by=student)
-
+            # create 12 Questions
+            for j in range(12):
+                question_text = "Custom Question " + str(j + 1)
+                question = Question.objects.create(question=question_text, section=section, difficulty="1",
+                                                   created_by=student)
                 # create Answers
                 Answer.objects.create(question=question, answer="Custom Answer 1")
                 Answer.objects.create(question=question, answer="Custom Answer 2")
@@ -309,3 +342,57 @@ class Command(BaseCommand):
                 Answer.objects.create(question=question, answer="Custom Answer 4", is_correct=True)
 
         self.stdout.write("...Custom Worlds created")
+
+    def __create_assignments(self):
+        '''
+        Creates an Assignment for each of the 2 Teachers
+        '''
+        self.stdout.write("Creating assignments...")
+
+        teachers = User.objects.filter(is_staff=True, is_superuser=False)
+        topics = ["Strategy Pattern", "Observer Pattern"]
+        for i in range(len(teachers)):
+            teacher = teachers[i]
+
+            # create custom world first
+            world_name = topics[i]
+            access_code = teacher.first_name[:3].upper() + "000"
+            custom_world = CustomWorld.objects.create(world_name=world_name, topic=topics[i], is_custom_world=True,
+                                                      access_code=access_code, created_by=teacher)
+            section = Section.objects.create(world=custom_world, sub_topic_name=topics[i])
+
+            # create 3 levels
+            for j in range(3):
+                # create Level
+                level_name = "Assignment Level " + str(j + 1)
+                Level.objects.create(section=section, level_name=level_name)
+
+            # create 12 questions
+            for k in range(12):
+                question_text = "Assignment Question " + str(k+1)
+                question = Question.objects.create(question=question_text, section=section, difficulty="1",
+                                                   created_by=teacher)
+                # create Answers
+                Answer.objects.create(question=question, answer="Assignment Answer 1")
+                Answer.objects.create(question=question, answer="Assignment Answer 2")
+                Answer.objects.create(question=question, answer="Assignment Answer 3")
+                Answer.objects.create(question=question, answer="Assignment Answer 4", is_correct=True)
+
+            # create assignment
+            class_group = Class.objects.get(teacher=teacher)
+            Assignment.objects.create(custom_world=custom_world, class_group=class_group, name=topics[i], deadline=self.assignment_deadline)
+
+        self.stdout.write("...assignments created")
+
+    # def __simulate_assignment_playthroughs(self):
+    #     """
+    #     First Assignment will be played 2 times
+    #     Second Assignment will be played 1 time
+    #     """
+    #
+    #     # Assignment 1
+    #     assignment1 = Assignment.objects.get(id=1).custom_world
+    #     assignment1_section = Section.objects.get(world=assignment1)
+    #     questions = Question.objects.filter(section=assignment1_section)
+    #     students = User.objects.filter(id__range=(8,10))
+    #     for student in students:
