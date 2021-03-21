@@ -31,23 +31,6 @@ class GameManager:
     def __init__(self, user):
         self.user = user
 
-    # Should change it for custom map
-    def get_user_position_in_map(self):
-        pass
-        # position = UserWorldProgressRecord.objects.filter(user=self.user, is_completed=False)
-        #
-        # # Instantiate the user position to the first world
-        # if not position:
-        #     world = World.objects.all.order_by("index")[0]
-        #     position = UserWorldProgressRecord.objects.create(
-        #         user=self.user,
-        #         world=world,
-        #     )
-        # else:
-        #     position = position[0]
-        #
-        # return position.world
-
     def instantiate_position(self, world=None):
         # Sets the initial location
 
@@ -97,15 +80,6 @@ class GameManager:
 
         return position
 
-    def check_access_to_level(self, level_id):
-        self.get_user_position_in_map()  # Put here first to set user location
-        curr_position = self.get_user_position_in_world()
-
-        if level_id == curr_position.id:
-            return curr_position
-        else:
-            return False
-
     def get_user_points_by_world(self, world):
         if not world:
             position = self.get_user_position_in_world()
@@ -141,7 +115,7 @@ class GameManager:
 
         return difficulty
 
-    def new_boss_question_record_session(self, level, questions):
+    def __new_boss_question_record_session(self, level, questions):
         if not level.is_final_boss_level:
             raise PermissionDenied(detail="This level is not allowed to get boss level questions. ")
 
@@ -177,7 +151,7 @@ class GameManager:
         else:
             return records
 
-    def new_question_record_session(self, level, question):
+    def __new_question_record_session(self, level, question):
         records = QuestionRecord.objects.filter(
             user=self.user,
             level=level,
@@ -270,187 +244,6 @@ class GameManager:
 
         user_position = self.get_user_position_in_world(world)
 
-        if not record:
-            raise PermissionDenied(detail="You are not allowed to check answer.")
-        else:
-            # Check the integrity of db
-            if len(record) == 1:
-                if user_position.is_final_boss_level:
-                    raise ValidationError(detail="DB integrity error.")
-                else:
-                    record = record[0]
-            elif len(record) == self.boss_level_qn:
-                pass
-
-    def __check_answer(self, question, answer):
-        if answer.question != question:
-            raise PermissionDenied(detail="One or more answers does not belong to their respective question.")
-
-        return answer.is_correct
-
-    def __award_points(self, question_record, is_correct, points):
-        """
-        :param question_record: The question record object
-        :param points: Points change
-        :return: Nothing
-
-        Sets the points for answering question and marks the question record completed
-        """
-        question_record.is_completed = True
-        question_record.points_change = points
-        question_record.completed_time = now()
-        question_record.is_correct = is_correct
-        question_record.save()
-
-    def __complete_level(self, level):
-        """
-        Completes the current level and unlock the next level if any.
-        :param level: the level object
-        :return:
-        """
-        progress = UserLevelProgressRecord.objects.get(
-            user=self.user,
-            level=level,
-        )
-        progress.is_completed = True
-        progress.completed_time = now()
-        progress.save()
-
-        # Unlock the next level
-        self.unlock_level()
-
-    def answer_questions(self, question_answer_set):
-
-        temp_qr = question_answer_set[0]["question_record"]
-
-        if not temp_qr.level.is_final_boss_level:
-            # Answer checking for normal level
-            if len(question_answer_set) != 1:
-                raise ValidationError(detail="Only one question can be checked at a time for normal levels.")
-
-            item = question_answer_set[0]
-            qr = item["question_record"]
-
-            is_correct, points = self.__check_normal_level_answer(qr, item['answer'])
-            # Award the points
-            self.__award_points(qr, is_correct, points)
-
-            qn_index = self.get_question_index(qr.level)
-            if qn_index == self.normal_level_qn:
-                # Unlock the next level
-                self.__complete_level(qr.level)
-
-            res = [{
-                "record_id": qr.id,
-                "question_text": qr.question.question,
-                "is_correct": is_correct,
-            }]
-
-            return res
-        else:
-            # Answer checking for normal level
-            if len(question_answer_set) != self.boss_level_qn:
-                raise ValidationError(detail=f"{self.boss_level_qn} answers needed for final boss level.")
-
-            unanswered_records = QuestionRecord.objects.filter(
-                user=self.user,
-                is_completed=False
-            )
-
-            if len(unanswered_records != self.boss_level_qn):
-                raise ValidationError(detail="Question record data mismatch! Contact admin immediately")
-
-            # Answer checking for boss level
-            correct_counter = 0
-            res = []
-            level = question_answer_set[0]["question_record"].level
-            for item in question_answer_set:
-                qr = item["question_record"]
-
-                is_correct = self.__check_boss_level_answer(qr, item['answer'])
-                correct_counter += 1 if is_correct else 0
-                self.__award_points(qr, is_correct, 0)
-                temp = {
-                    "record_id": qr.id,
-                    "question_text": qr.question.question,
-                    "is_correct": is_correct
-                }
-                res.append(temp)
-            # Must answer at least 5 questions correctly.
-            if correct_counter > 5:
-                # Unlock the next level
-                self.__complete_level(level)
-            return res
-
-        unanswered_records = QuestionRecord.objects.filter(
-                user=self.user,
-                is_completed=False,
-        )
-        if len(unanswered_records) == 0:
-            raise PermissionDenied("You are not allowed to answer this question.")
-        elif len(unanswered_records) == 1:
-            # Answer checking for normal level
-            if len(question_answer_set) != 1:
-                raise ValidationError(detail="Only one question can be checked at a time for normal levels.")
-
-            item = question_answer_set[0]
-            qr = item["question_record"]
-
-            if qr not in unanswered_records:
-                raise ValidationError(detail="You are not allowed to answer this question.")
-
-
-            is_correct, points = self.__check_normal_level_answer(qr, item['answer'])
-            # Award the points
-            self.__award_points(qr, is_correct, points)
-
-            qn_index = self.get_question_index(qr.level)
-            if qn_index == self.normal_level_qn:
-                # Unlock the next level
-                self.__complete_level(qr.level)
-
-            res = [{
-                "record_id": qr.id,
-                "question_text": qr.question.question,
-                "is_correct": is_correct,
-            }]
-
-            return res
-        elif len(unanswered_records) == self.boss_level_qn:
-            # Answer checking for boss level
-
-            correct_counter = 0
-            res = []
-            level = question_answer_set[0]["question_record"].level
-            for item in question_answer_set:
-                qr = item["question_record"]
-                if qr not in unanswered_records:
-                    raise ValidationError(detail="One or more question records does not belong to the user.")
-
-                is_correct = self.__check_boss_level_answer(qr, item['answer'])
-                correct_counter += 1 if is_correct else 0
-                self.__award_points(qr, is_correct, 0)
-                temp = {
-                    "record_id": qr.id,
-                    "question_text": qr.question.question,
-                    "is_correct": is_correct
-                }
-                res.append(temp)
-            # Must answer at least 5 questions correctly.
-            if correct_counter > 5:
-                # Unlock the next level
-                self.__complete_level(level)
-            return res
-        else:
-            raise ValidationError(detail="Question record data mismatch, contact admin immediately.")
-
-    def __check_normal_level_answer(self, question_record, answer):
-
-        is_correct = self.__check_answer(question_record.question, answer)
-        # Points change
-        curr_points = self.get_user_points_by_world(question_record.level.section.world)
-        points = self.difficulty_points_map[is_correct][question_record.question.difficulty]
-
         # Do not let points fall below 0
         if curr_points + points < 0:
             points = -curr_points
@@ -460,58 +253,7 @@ class GameManager:
     def __check_boss_level_answer(self, question_record, answer):
         return self.__check_answer(question_record.question, answer)
 
-    def check_answer_in_world(self, world, answer):
-        if world is None:
-            # Main world
-            record = QuestionRecord.objects.filter(
-                user=self.user,
-                level__section__world__is_custom_world=False,
-                is_completed=False
-            )
-        else:
-            # Custom world
-            record = QuestionRecord.objects.filter(
-                user=self.user,
-                level__section__world=world,
-                is_completed=False
-            )
-
-        if not record:
-            raise PermissionDenied(detail="You are not allowed to check answer.")
-        else:
-            record = record[0]
-
-        if answer.question.id != record.question.id:
-            raise PermissionDenied(detail="You are not allowed to check this answer.")
-
-        # Points change
-        curr_points = self.get_user_points_by_world(world)
-        points = self.difficulty_points_map[answer.is_correct][record.question.difficulty]
-
-        # Do not let points fall below 0
-        if curr_points + points < 0:
-            points = -curr_points
-
-        # Update the question record
-        record.is_completed = True
-        record.points_change = points
-        # record.points_change = -10
-        record.completed_time = now()
-        record.is_correct = answer.is_correct
-        record.save()
-
-        if record.is_correct:
-            # Update player progress if answer correctly
-            progress = UserLevelProgressRecord.objects.get(level=record.level)
-            progress.is_completed = True
-            progress.completed_time = now()
-            progress.save()
-
-            # Unlock the next level
-            self.unlock_level()
-        return record.is_correct, record.points_change
-
-    def get_question_index(self, position):
+    def __get_question_index(self, position):
         qr = QuestionRecord.objects.filter(
             user=self.user,
             level=position,
@@ -519,8 +261,8 @@ class GameManager:
 
         return len(qr)
 
-    def get_single_question_set(self, position):
-        qn_index = self.get_question_index(position)
+    def __get_single_question_set(self, position):
+        qn_index = self.__get_question_index(position)
 
         if qn_index > self.normal_level_qn - 1:
             raise PermissionDenied(detail="You are not allowed to get more questions of this level.")
@@ -561,7 +303,7 @@ class GameManager:
         random_qn = Question.objects.get(pk=pks[random_idx])
 
         # Add to question record
-        record = self.new_question_record_session(position, random_qn)
+        record = self.__new_question_record_session(position, random_qn)
         if not record:
             raise PermissionDenied(detail="You are not allowed to get question. World completed.")
         question = record.question
@@ -576,7 +318,7 @@ class GameManager:
         }]
         return res
 
-    def get_boss_level_question_answer(self, position):
+    def __get_boss_level_question_answer(self, position):
         total_qn = self.boss_level_qn
         section_list = list(Section.objects.filter(world=position.section.world).values_list('id', flat=True))
         # Get answered questions of user.
@@ -613,7 +355,7 @@ class GameManager:
             qn = Question.objects.get(pk=qn_id)
             random_qns.append(qn)
 
-        records = self.new_boss_question_record_session(level=position, questions=random_qns)
+        records = self.__new_boss_question_record_session(level=position, questions=random_qns)
         res = []
         for item in records:
             question = item.question
@@ -630,8 +372,8 @@ class GameManager:
     def get_questions(self, world):
         position = self.get_user_position_in_world(world)
         if position.is_final_boss_level:
-            question_list = self.get_boss_level_question_answer(position)
+            question_list = self.__get_boss_level_question_answer(position)
         else:
-            question_list = self.get_single_question_set(position)
+            question_list = self.__get_single_question_set(position)
 
         return question_list
