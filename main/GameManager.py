@@ -440,7 +440,8 @@ class GameManager:
             temp = {
                 "question": question,
                 "answers": answers,
-                "record_id": item.id
+                "record_id": item.id,
+                "index": None
             }
             res.append(temp)
         return res
