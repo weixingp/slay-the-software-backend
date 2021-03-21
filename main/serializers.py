@@ -72,10 +72,12 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class AnswerSerializer(serializers.ModelSerializer):
     question = serializers.CharField(required=False)
+
     class Meta:
         model = Answer
         fields = '__all__'
-        #read_only_fields = ["is_correct"]
+        # read_only_fields = ["is_correct"]
+
 
 class AnswerWithoutCorrectShownSerializer(serializers.ModelSerializer):
     class Meta:
@@ -102,10 +104,29 @@ class GetQuestionByLevelIDSerializer(serializers.Serializer):
         return {"level": level}
 
 
+class AnswerQuestionSerializer(serializers.Serializer):
+    record_id = serializers.IntegerField()
+    answer_id = serializers.IntegerField()
+
+    def validate(self, attrs):
+        try:
+            qr = QuestionRecord.objects.get(id=attrs['record_id'])
+
+            if qr.is_completed:
+                raise serializers.ValidationError(detail="One or more question records is completed.")
+
+            answer = Answer.objects.get(id=attrs['answer_id'])
+        except QuestionRecord.DoesNotExist:
+            raise serializers.ValidationError(detail="One or more question records not found in database.")
+        except Answer.DoesNotExist:
+            raise serializers.ValidationError(detail="One or more answers not found in database.")
+
+        return {"question_record": qr, "answer": answer}
+
+
 class QuestionAnswerSerializer(serializers.Serializer):
     question = QuestionSerializer()
     answers = AnswerWithoutCorrectShownSerializer(many=True)
-
 
 
 class LeaderboardSerializer(serializers.Serializer):
@@ -138,69 +159,61 @@ class QuestionRecordSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class CheckAnswerSerializer(serializers.Serializer):
-    answer_id = serializers.CharField()
-
-    def validate(self, attrs):
-        answer_id = attrs['answer_id']
-        try:
-            answer = Answer.objects.get(id=answer_id)
-        except ObjectDoesNotExist:
-            raise NotFound(detail="Answer not found.")
-
-        return {"answer": answer}
-
 class CreateQuestionSerializer(serializers.ModelSerializer):
     answers = AnswerSerializer(many=True)
     section = serializers.CharField(required=False)
     difficulty = serializers.CharField(required=False)
     created_by = serializers.CharField(required=False)
+
     class Meta:
         model = Question
         fields = '__all__'
 
     def create(self, validated_data):
-        truecount=0
+        truecount = 0
         answers_data = validated_data.pop('answers')
         print(answers_data)
         if len(answers_data) != 4:
             raise NotFound(detail="Invalid number of answers")
         print(answers_data)
         for i in answers_data:
-            if (i['is_correct']==True):
-                truecount+=1
+            if (i['is_correct'] == True):
+                truecount += 1
         if truecount != 1:
             raise NotFound(detail="Invalid number of is_correct")
         question = Question.objects.create(**validated_data)
         for answer_data in answers_data:
             Answer.objects.create(question=question, **answer_data)
         return question
+
 
 class EditQuestionSerializer(serializers.ModelSerializer):
     answers = AnswerSerializer(many=True, read_only=True)
     section = serializers.CharField(required=False)
     difficulty = serializers.CharField(required=False)
     created_by = serializers.CharField(required=False)
+
     class Meta:
         model = Question
         fields = '__all__'
 
     def create(self, validated_data):
-        truecount=0
+        truecount = 0
         answers_data = validated_data.pop('answers')
         print(answers_data)
         if len(answers_data) != 4:
             raise NotFound(detail="Invalid number of answers")
         print(answers_data)
         for i in answers_data:
-            if (i['is_correct']==True):
-                truecount+=1
+            if (i['is_correct'] == True):
+                truecount += 1
         if truecount != 1:
             raise NotFound(detail="Invalid number of is_correct")
         question = Question.objects.create(**validated_data)
         for answer_data in answers_data:
             Answer.objects.create(question=question, **answer_data)
         return question
+
 
 class CustomWorldSerializer(serializers.ModelSerializer):
     sections = SectionSerializer(many=True, read_only=True)

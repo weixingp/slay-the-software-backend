@@ -250,7 +250,8 @@ class QuestionView(APIView):
             temp = {
                 "question": question_serializer.data['question'],
                 "answers": answers_serializer.data,
-                "record_id": question['record_id']
+                "record_id": question['record_id'],
+                "index": question['index'],
             }
             res["questions"].append(temp)
 
@@ -261,19 +262,30 @@ class CheckAnswerView(APIView):
     def post(self, request):
         user = request.user
         gm = GameManager(user)
-        serializer = WorldValidateSerializer(data=request.GET)
-        serializer.is_valid(raise_exception=True)
+        try:
+            data = request.data["question_records"]
+        except Exception:
+            raise ValidationError(detail="Invalid input data.")
 
-        check_answer_serializer = CheckAnswerSerializer(data=request.data)
-        check_answer_serializer.is_valid(raise_exception=True)
-        answer = check_answer_serializer.validated_data['answer']
+        question_answer_set = []
+        for item in data:
+            serializer = AnswerQuestionSerializer(data=item)
+            serializer.is_valid(raise_exception=True)
+            qr = serializer.validated_data['question_record']
 
-        is_correct, points_change = gm.check_answer_in_world(serializer.validated_data['world'], answer)
-        res = {
-            "is_correct": is_correct,
-            "points_change": points_change,
-        }
-        return Response(res)
+            # Check ownership
+            if qr.user != request.user:
+                raise PermissionDenied(detail="You are not allowed to answer other people's question.")
+
+            temp = {
+                "question_record": serializer.validated_data['question_record'],
+                "answer": serializer.validated_data['answer'],
+            }
+            question_answer_set.append(temp)
+
+        res = gm.answer_questions(question_answer_set)
+
+        return Response({"results": res})
 
 
 class CustomQuestionView(APIView):
