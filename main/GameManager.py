@@ -225,24 +225,120 @@ class GameManager:
 
         return next_level
 
-    def check_answer1(self, world, answers):
+    def __check_answer(self, question, answer):
+        if answer.question != question:
+            raise PermissionDenied(detail="One or more answers does not belong to their respective question.")
 
-        if world is None:
-            # Main world
-            record = QuestionRecord.objects.filter(
-                user=self.user,
-                level__section__world__is_custom_world=False,
-                is_completed=False
-            )
+        return answer.is_correct
+
+    def __award_points(self, question_record, is_correct, points):
+        """
+        :param question_record: The question record object
+        :param points: Points change
+        :return: Nothing
+
+        Sets the points for answering question and marks the question record completed
+        """
+        question_record.is_completed = True
+        question_record.points_change = points
+        question_record.completed_time = now()
+        question_record.is_correct = is_correct
+        question_record.save()
+
+    def __complete_level(self, level):
+        """
+        Completes the current level and unlock the next level if any.
+        :param level: the level object
+        :return:
+        """
+        progress = UserLevelProgressRecord.objects.get(
+            user=self.user,
+            level=level,
+        )
+        progress.is_completed = True
+        progress.completed_time = now()
+        progress.save()
+
+        # Unlock the next level
+        self.unlock_level()
+
+    def answer_questions(self, question_answer_set):
+
+        temp_qr = question_answer_set[0]["question_record"]
+
+        if not temp_qr.level.is_final_boss_level:
+            # Answer checking for normal level
+            if len(question_answer_set) != 1:
+                raise ValidationError(detail="Only one question can be checked at a time for normal levels.")
+
+            item = question_answer_set[0]
+            qr = item["question_record"]
+
+            is_correct, points = self.__check_normal_level_answer(qr, item['answer'])
+            # Award the points
+            self.__award_points(qr, is_correct, points)
+
+            qn_index = self.__get_question_index(qr.level)
+            if qn_index == self.normal_level_qn:
+                # Unlock the next level
+                self.__complete_level(qr.level)
+
+            res = [{
+                "record_id": qr.id,
+                "question_text": qr.question.question,
+                "is_correct": is_correct,
+                "points": points
+            }]
+
+            return res
         else:
-            # Custom world
-            record = QuestionRecord.objects.filter(
+            # Answer checking for boss level
+            if len(question_answer_set) != self.boss_level_qn:
+                raise ValidationError(detail=f"{self.boss_level_qn} answers needed for final boss level.")
+
+            unanswered_records = QuestionRecord.objects.filter(
                 user=self.user,
-                level__section__world=world,
                 is_completed=False
             )
 
-        user_position = self.get_user_position_in_world(world)
+            if len(unanswered_records) != self.boss_level_qn:
+                raise ValidationError(detail="Question record data mismatch! Contact admin immediately")
+
+            # Answer checking for boss level
+            correct_counter = 0
+            res = []
+            level = question_answer_set[0]["question_record"].level
+            for item in question_answer_set:
+                qr = item["question_record"]
+
+                is_correct = self.__check_boss_level_answer(qr, item['answer'])
+                correct_counter += 1 if is_correct else 0
+                temp = {
+                    "record_id": qr.id,
+                    "question_text": qr.question.question,
+                    "is_correct": is_correct,
+                    "points": 0
+                }
+                res.append(temp)
+
+            index = 0
+            # This is to ensure atomicity of data
+            for item in question_answer_set:
+                self.__award_points(item["question_record"], res[index]["is_correct"], res[index]["points"])
+                index += 1
+
+            # Must answer at least 5 questions correctly.
+            if correct_counter > 5:
+                # Unlock the next level
+                self.__complete_level(level)
+            return res
+
+    def __check_normal_level_answer(self, question_record, answer):
+
+        is_correct = self.__check_answer(question_record.question, answer)
+        # Points change
+        curr_points = self.get_user_points_by_world(question_record.level.section.world)
+        points = self.difficulty_points_map[is_correct][question_record.question.difficulty]
 
         # Do not let points fall below 0
         if curr_points + points < 0:
