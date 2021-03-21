@@ -25,7 +25,8 @@ class GameManager:
 
     }
 
-    boss_level_qn = 10
+    boss_level_qn = 10  # Should not be changed after the game has been init
+    normal_level_qn = 3  # Should not be changed after the game has been init
 
     def __init__(self, user):
         self.user = user
@@ -244,6 +245,37 @@ class GameManager:
 
         return next_level
 
+    def check_answer(self, world, answers):
+
+        if world is None:
+            # Main world
+            record = QuestionRecord.objects.filter(
+                user=self.user,
+                level__section__world__is_custom_world=False,
+                is_completed=False
+            )
+        else:
+            # Custom world
+            record = QuestionRecord.objects.filter(
+                user=self.user,
+                level__section__world=world,
+                is_completed=False
+            )
+
+        user_position = self.get_user_position_in_world(world)
+
+        if not record:
+            raise PermissionDenied(detail="You are not allowed to check answer.")
+        else:
+            # Check the integrity of db
+            if len(record) == 1:
+                if user_position.is_final_boss_level:
+                    raise ValidationError(detail="DB integrity error.")
+                else:
+                    record = record[0]
+            elif len(record) == self.boss_level_qn:
+                pass
+
     def check_answer_in_world(self, world, answer):
         if world is None:
             # Main world
@@ -298,7 +330,19 @@ class GameManager:
     def check_answers_for_boss_level(self, answer_set):
         pass
 
+    def get_question_index(self, position):
+        qr = QuestionRecord.objects.filter(
+            user=self.user,
+            level=position,
+        )
+
+        return len(qr)
+
     def get_single_question_set(self, position):
+        qn_index = self.get_question_index(position)
+
+        if qn_index > self.normal_level_qn - 1:
+            raise PermissionDenied(detail="You are not allowed to get more questions of this level.")
 
         section = position.section
 
@@ -347,6 +391,7 @@ class GameManager:
             "question": question,
             "answers": answers,
             "record_id": record.id,
+            "index": qn_index,
         }]
         return res
 
@@ -395,7 +440,8 @@ class GameManager:
             temp = {
                 "question": question,
                 "answers": answers,
-                "record_id": item.id
+                "record_id": item.id,
+                "index": None
             }
             res.append(temp)
         return res

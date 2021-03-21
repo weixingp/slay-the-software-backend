@@ -250,7 +250,8 @@ class QuestionView(APIView):
             temp = {
                 "question": question_serializer.data['question'],
                 "answers": answers_serializer.data,
-                "record_id": question['record_id']
+                "record_id": question['record_id'],
+                "index": question['index'],
             }
             res["questions"].append(temp)
 
