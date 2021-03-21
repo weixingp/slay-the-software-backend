@@ -176,7 +176,31 @@ class CreateQuestionSerializer(serializers.ModelSerializer):
             Answer.objects.create(question=question, **answer_data)
         return question
 
+class EditQuestionSerializer(serializers.ModelSerializer):
+    answers = AnswerSerializer(many=True, read_only=True)
+    section = serializers.CharField(required=False)
+    difficulty = serializers.CharField(required=False)
+    created_by = serializers.CharField(required=False)
+    class Meta:
+        model = Question
+        fields = '__all__'
 
+    def create(self, validated_data):
+        truecount=0
+        answers_data = validated_data.pop('answers')
+        print(answers_data)
+        if len(answers_data) != 4:
+            raise NotFound(detail="Invalid number of answers")
+        print(answers_data)
+        for i in answers_data:
+            if (i['is_correct']==True):
+                truecount+=1
+        if truecount != 1:
+            raise NotFound(detail="Invalid number of is_correct")
+        question = Question.objects.create(**validated_data)
+        for answer_data in answers_data:
+            Answer.objects.create(question=question, **answer_data)
+        return question
 
 class CustomWorldSerializer(serializers.ModelSerializer):
     sections = SectionSerializer(many=True, read_only=True)
