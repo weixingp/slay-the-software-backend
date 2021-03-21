@@ -169,6 +169,7 @@ class StudentProfile(models.Model):
     student = models.OneToOneField(User, on_delete=models.CASCADE, related_name="student_profile")
     year_of_study = models.IntegerField()
     class_group = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, related_name="students")
+    has_reset_password = models.BooleanField(default=False)
 
     def __str__(self):
         return self.student.first_name + " " + self.student.last_name + "|" + self.class_group.class_name
