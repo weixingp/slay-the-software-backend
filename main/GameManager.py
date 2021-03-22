@@ -186,7 +186,9 @@ class GameManager:
 
     def unlock_level(self, world=None):
         position = self.get_user_position_in_world(world)
+        print(position)
         levels = Level.objects.filter(id__gt=position.id, section=position.section).order_by('id')
+        print(levels)
         if not levels:
             if not world:
                 # Main world logic
@@ -258,7 +260,7 @@ class GameManager:
         progress.save()
 
         # Unlock the next level
-        self.unlock_level()
+        self.unlock_level(level.section.world)
 
     def answer_questions(self, question_answer_set):
 
@@ -358,8 +360,8 @@ class GameManager:
     def __get_single_question_set(self, position):
         qn_index = self.__get_question_index(position)
 
-        if qn_index > self.normal_level_qn - 1:
-            raise PermissionDenied(detail="You are not allowed to get more questions of this level.")
+        # if qn_index > self.normal_level_qn - 1:
+        #     raise PermissionDenied(detail="You are not allowed to get more questions of this level.")
 
         section = position.section
 
