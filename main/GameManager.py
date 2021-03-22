@@ -186,11 +186,9 @@ class GameManager:
 
     def unlock_level(self, world=None):
         position = self.get_user_position_in_world(world)
-        print(position)
         levels = Level.objects.filter(id__gt=position.id, section=position.section).order_by('id')
-        print(levels)
         if not levels:
-            if not world:
+            if not position.section.world.is_custom_world:
                 # Main world logic
                 # Try the next section
                 next_section = Section.objects.filter(id__gt=position.section.id, world__is_custom_world=False)
