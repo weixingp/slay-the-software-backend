@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.db.models import Sum, Avg
+from django.http import HttpResponse
 from django.shortcuts import render
+from django.template import loader
 from django.urls import path
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import *
@@ -85,10 +87,21 @@ class CustomAdminSite(admin.AdminSite):
         urls = super().get_urls()
         custom_urls = [
             path('campaign_statistics/', self.admin_view(self.campaign_statistics_view)),
-            path('campaign_statistics/<str:class_name>/', self.admin_view(self.campaign_statistics_view))
+            path('campaign_statistics/<str:class_name>/', self.admin_view(self.campaign_statistics_view)),
             # path('assignment_statistics/', self.admin_view(self.assignment_statistics_view)),
+            path('import-users/', self.admin_view(self.import_user_view))
         ]
         return custom_urls + urls
+
+    def import_user_view(self, request, class_name=None):
+        template = loader.get_template('admin/import-users.html')
+
+        context = {
+
+        }
+
+        response = HttpResponse(template.render(context, request))
+        return response
 
     def campaign_statistics_view(self, request, class_name=None):
         """
