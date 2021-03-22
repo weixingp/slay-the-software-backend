@@ -462,33 +462,33 @@ class GetPositionView(APIView):
         return Response(res)
 
 
-class EditAnswerView(APIView):
-    permission_classes = [IsOwnerOrReadOnly]
-
-    def get_answer(self, id):
-        try:
-            return Answer.objects.get(id=id)
-        except Answer.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-    def get(self, request, id):
-        answer = self.get_answer(id)
-        if isinstance(answer, Response):
-            return answer
-
-        serializer = AnswerSerializer(answer)
-        return Response(serializer.data)
-
-    def put(self, request, id):
-        answer = self.get_answer(id)
-        if isinstance(answer, Response):
-            return answer
-
-        serializer = AnswerSerializer(answer, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# class EditAnswerView(APIView):
+#     permission_classes = [IsOwnerOrReadOnly]
+#
+#     def get_answer(self, id):
+#         try:
+#             return Answer.objects.get(id=id)
+#         except Answer.DoesNotExist:
+#             return Response(status=status.HTTP_404_NOT_FOUND)
+#
+#     def get(self, request, id):
+#         answer = self.get_answer(id)
+#         if isinstance(answer, Response):
+#             return answer
+#
+#         serializer = AnswerSerializer(answer)
+#         return Response(serializer.data)
+#
+#     def put(self, request, id):
+#         answer = self.get_answer(id)
+#         if isinstance(answer, Response):
+#             return answer
+#
+#         serializer = AnswerSerializer(answer, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # KIV if need
 # class AssignmentView(APIView):

@@ -14,7 +14,7 @@ question_urls = [
     path('api/questions/world/check/', CheckAnswerView.as_view()),
     path('api/questions/', CustomQuestionView.as_view()),
     path('api/questions/<int:pk>/', CustomQuestionListView.as_view()),
-    path('api/questions/answers/<int:id>/', EditAnswerView.as_view()),
+    # path('api/questions/answers/<int:id>/', EditAnswerView.as_view()),
 ]
 
 misc_urls = [

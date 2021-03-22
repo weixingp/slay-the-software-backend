@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied, ParseError
 
 from main.GameManager import GameManager
 from main.models import Question, Answer, Section, Level
@@ -192,7 +192,7 @@ class CreateQuestionSerializer(serializers.ModelSerializer):
 
 
 class EditQuestionSerializer(serializers.ModelSerializer):
-    answers = AnswerSerializer(many=True, read_only=True)
+    answers = AnswerSerializer(many=True, partial=True)
     section = serializers.CharField(required=False)
     difficulty = serializers.CharField(required=False)
     created_by = serializers.CharField(required=False)
@@ -201,22 +201,41 @@ class EditQuestionSerializer(serializers.ModelSerializer):
         model = Question
         fields = '__all__'
 
-    def create(self, validated_data):
+    def __validate_answers(self, answers_data):
         truecount = 0
-        answers_data = validated_data.pop('answers')
-        print(answers_data)
         if len(answers_data) != 4:
-            raise NotFound(detail="Invalid number of answers")
-        print(answers_data)
+            raise ParseError(detail="Invalid number of answers")
         for i in answers_data:
             if (i['is_correct'] == True):
                 truecount += 1
         if truecount != 1:
-            raise NotFound(detail="Invalid number of is_correct")
-        question = Question.objects.create(**validated_data)
-        for answer_data in answers_data:
-            Answer.objects.create(question=question, **answer_data)
-        return question
+            raise ParseError(detail="Invalid number of is_correct")
+        return True
+
+    def create(self, validated_data):
+        answers_data = validated_data.pop('answers')
+        print(answers_data)
+        if self.__validate_answers(answers_data):
+            question = Question.objects.create(**validated_data)
+            for answer_data in answers_data:
+                Answer.objects.create(question=question, **answer_data)
+            return question
+
+    def update(self, instance, validated_data):
+        # instance refers to the Question object with only a question field
+        instance.question = validated_data.get('question', instance.question)
+        answers_data = validated_data.get('answers', None)
+        if answers_data and self.__validate_answers(answers_data):
+            # only update answers if the request has answers and they are valid
+            answers = Answer.objects.filter(question=instance)
+            for i in range(len(answers)):
+                answer = answers[i]
+                answer.answer = answers_data[i]["answer"]
+                answer.is_correct = answers_data[i]["is_correct"]
+                answer.save()
+            instance.answers.set(answers)
+        instance.save()
+        return instance
 
 
 class CustomWorldSerializer(serializers.ModelSerializer):
