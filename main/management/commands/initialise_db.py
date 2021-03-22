@@ -1,10 +1,12 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from rest_framework.exceptions import PermissionDenied
+
 from main.models import *
 from django.utils import timezone
 import random
-from main import GameManager as gm
+from main.GameManager import GameManager
 
 points_map = {
     "1": 5,
@@ -19,19 +21,19 @@ class Command(BaseCommand):
         super().__init__()
         self.completed_time = timezone.now() + timezone.timedelta(days=2)
         self.assignment_deadline = timezone.now() + timezone.timedelta(days=7)
+        self.answers_boolean = [True, False]
+        self.correct_answer_prob = [0.7, 0.3]
 
     def handle(self, *args, **options):
         self.__create_superusers()
         self.__create_teachers()
         self.__create_students()
         self.__create_campaign_mode()
-        self.__simulate_student1_progress()
-        self.__simulate_student2_progress()
-        self.__simulate_student3_progress()
-        self.__create_custom_worlds()
+        self.__simulate_students_campaign_mode()
+        self.__create_challenge_mode()
         self.__create_assignments()
-        #self.__simulate_assignment_playthroughs()
-
+        self.__simulate_challenge_mode_playthroughs()
+        self.__simulate_assignment_playthroughs()
 
     def __create_superusers(self):
         self.stdout.write("Creating superusers...")
@@ -42,6 +44,12 @@ class Command(BaseCommand):
         self.stdout.write("...superusers created")
 
     def __create_teachers(self):
+        '''
+        Creates the following 4 Teachers:
+        - Nicole: SSP1, SSP2
+        - Zhen Ying: SSP3, SSP4
+        '''
+
         self.stdout.write("Creating teachers...")
 
         # create teacher group and set permissions
@@ -54,27 +62,36 @@ class Command(BaseCommand):
                     Permission.objects.get(codename=verb+"_"+model)
                 )
 
-        teachers = [{"username": "nicole", "password": "nicole123", "first_name": "Nicole", "last_name": "Tan", "class": "SSP1"},
-                    {"username": "zhenying", "password": "zhenyin123", "first_name": "Zhen Ying", "last_name": "Ngiam", "class": "SSP2"}]
+        teachers = [{"username": "nicole", "password": "nicole123", "first_name": "Nicole", "last_name": "Tan", "class": ["SSP1", "SSP2"]},
+                    {"username": "zhenying", "password": "zhenyin123", "first_name": "Zhen Ying", "last_name": "Ngiam", "class": ["BCG1", "BCG2"]}]
         for teacher in teachers:
             created_teacher = User.objects.create_user(username=teacher["username"], password=teacher["password"],
                                                        first_name=teacher["first_name"], last_name=teacher["last_name"],
                                                        is_staff=True)
             teacher_group.user_set.add(created_teacher)
-            Class.objects.create(teacher=created_teacher, class_name=teacher["class"])
+
+            for class_group in teacher["class"]:
+                Class.objects.create(teacher=created_teacher, class_name=class_group)
 
         self.stdout.write("...teachers created")
 
     def __create_students(self):
+        '''
+        Creates 8 Students
+        '''
         self.stdout.write("Creating students...")
-        students = [{"username": "wanqian", "password": "wanqian123", "first_name": "Wan", "last_name": "Qian", "class": "SSP1"},
-                    {"username": "josh", "password": "josh123", "first_name": "Josh", "last_name": "Lim", "class": "SSP1"},
-                    {"username": "shenrui", "password": "shenrui123", "first_name": "Shen Rui", "last_name": "Chong", "class": "SSP1"},
-                    {"username": "tom", "password": "tom123", "first_name": "Tom", "last_name": "Tan", "class": "SSP2"},
-                    {"username": "mary", "password": "mary123", "first_name": "Mary", "last_name": "Lee", "class": "SSP2"},
-                    {"username": "jerry", "password": "jerry123", "first_name": "Jerry", "last_name": "Chua", "class": "SSP2"},
-                    {"username": "ayden", "password": "ayden123", "first_name": "Ayden", "last_name": "Wong", "class": "SSP2"},
-                    {"username": "jayden", "password": "jayden123", "first_name": "Jayden", "last_name": "Seah", "class": "SSP2"},]
+        students = [
+            {"username": "josh", "password": "josh123", "first_name": "Josh", "last_name": "Lim", "class": "SSP1"},
+            {"username": "shenrui", "password": "shenrui123", "first_name": "Shen Rui", "last_name": "Chong", "class": "SSP1"},
+            {"username": "wanqian", "password": "wanqian123", "first_name": "Wan", "last_name": "Qian", "class": "SSP2"},
+            {"username": "tom", "password": "tom123", "first_name": "Tom", "last_name": "Tan", "class": "SSP2"},
+            {"username": "mary", "password": "mary123", "first_name": "Mary", "last_name": "Lee", "class": "BCG1"},
+            {"username": "jerry", "password": "jerry123", "first_name": "Jerry", "last_name": "Chua", "class": "BCG1"},
+            {"username": "ayden", "password": "ayden123", "first_name": "Ayden", "last_name": "Wong", "class": "BCG2"},
+            {"username": "jayden", "password": "jayden123", "first_name": "Jayden", "last_name": "Seah", "class": "BCG2"},
+            {"username": "james", "password": "james123", "first_name": "James", "last_name": "Barnes", "class": "SSP1"},
+            {"username": "sam", "password": "sam123", "first_name": "Sam", "last_name": "Wilson", "class": "BCG1"}
+        ]
         for student in students:
             created_student = User.objects.create_user(username=student["username"], password=student["password"],
                                                        first_name=student["first_name"], last_name=student["last_name"])
@@ -90,24 +107,24 @@ class Command(BaseCommand):
         Last Level of the 3rd and last Section is the Final Boss Level.
         """
         self.stdout.write("Creating data for Campaign Mode...")
-        aquila = World.objects.create(world_name="Dusza", topic="Requirements Analysis", index=1)
-        bootes = World.objects.create(world_name="Wonders", topic="Software Architecture Styles", index=2)
-        cassiopeia = World.objects.create(world_name="Zeha", topic="Software Testing", index=3)
+        world1 = World.objects.create(world_name="Dusza", topic="Requirements Analysis", index=1)
+        world2 = World.objects.create(world_name="Wonders", topic="Software Architecture Styles", index=2)
+        world3 = World.objects.create(world_name="Zeha", topic="Software Testing", index=3)
 
         # create sections for world 1
-        self.__create_section(aquila, "Requirements Elicitation", 1, False)
-        self.__create_section(aquila, "Conceptual Models", 2, False)
-        self.__create_section(aquila, "Dynamic Models", 3, True)
+        self.__create_section(world1, "Requirements Elicitation", 1, False)
+        self.__create_section(world1, "Conceptual Models", 2, False)
+        self.__create_section(world1, "Dynamic Models", 3, True)
 
         # create sections for world 2
-        self.__create_section(bootes, "Individual Components Style", 4, False)
-        self.__create_section(bootes, "Pipe-and-Filter Style", 5, False)
-        self.__create_section(bootes, "Layered Style", 6, True)
+        self.__create_section(world2, "Individual Components Style", 4, False)
+        self.__create_section(world2, "Pipe-and-Filter Style", 5, False)
+        self.__create_section(world2, "Layered Style", 6, True)
 
         # create sections for world 3
-        self.__create_section(cassiopeia, "White Box Testing", 7, False)
-        self.__create_section(cassiopeia, "Black Box Testing", 8, False)
-        self.__create_section(cassiopeia, "User Acceptance Testing", 9, True)
+        self.__create_section(world3, "White Box Testing", 7, False)
+        self.__create_section(world3, "Black Box Testing", 8, False)
+        self.__create_section(world3, "User Acceptance Testing", 9, True)
         self.stdout.write("...all data for Campaign Mode created")
 
     def __create_section(self, world, sub_topic_name, index, has_final_boss):
@@ -159,158 +176,66 @@ class Command(BaseCommand):
         Answer.objects.create(question=question, answer="Answer 3")
         Answer.objects.create(question=question, answer="Answer 4", is_correct=True)
 
-    def __simulate_student1_progress(self):
-        self.stdout.write("Simulating Student 1...")
-        # Student1 will have finished 1 World, and 2 Sections in another World
-        student = User.objects.get(username="wanqian")
+    def __simulate_students_campaign_mode(self):
+        self.stdout.write("Simulating students' playthrough in Campaign Mode...")
+        student_records = [
+            {"username": "josh", "worlds_finished": 1, "current_section": 3, "current_level": 1, "completed_mode": False},
+            {"username": "shenrui", "worlds_finished": 2, "current_section": 3, "current_level": 3, "completed_mode": False},
+            {"username": "wanqian", "worlds_finished": 0, "current_section": 2, "current_level": 3, "completed_mode": False},
+            {"username": "tom", "worlds_finished": 2, "current_section": 1, "current_level": 2, "completed_mode": False},
+            {"username": "mary", "worlds_finished": 1, "current_section": 2, "current_level": 2, "completed_mode": False},
+            {"username": "jerry", "worlds_finished": 3, "current_section": 3, "current_level": 3, "completed_mode": True},
+            {"username": "ayden", "worlds_finished": 0, "current_section": 1, "current_level": 1, "completed_mode": False},
+            # {"username": "jayden", "worlds_finished": 0, "current_section": None, "current_level": None, "completed_mode": False},
+            {"username": "james", "worlds_finished": 2, "current_section": 3, "current_level": 2, "completed_mode": False},
+            {"username": "sam", "worlds_finished": 3, "current_section": 3, "current_level": 3, "completed_mode": True}
+        ]
 
-        # add records for finished world
-        completed_world = World.objects.get(id=1)
-        UserWorldProgressRecord.objects.create(user=student, world=completed_world, is_completed=True,
-                                               completed_time=self.completed_time)
-        # add level and question records for finished world
-        sections = Section.objects.filter(world=completed_world)
-        for section in sections:
-            levels = Level.objects.filter(section=section)
-            questions = Question.objects.filter(section=section)
-            for level in levels:
-                UserLevelProgressRecord.objects.create(user=student, level=level, is_completed=True,
-                                                       completed_time=self.completed_time)
-                if level.is_final_boss_level:
-                    num_of_questions_to_add = 10
-                else:
-                    num_of_questions_to_add = 3
-                for i in range(num_of_questions_to_add):
-                    question = random.choice(questions)
-                    QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
-                                                  points_change=points_map[question.difficulty], reason="Correct",
-                                                  is_completed=True, completed_time=self.completed_time)
-        # add records for partially finished world
-        partially_completed_world = World.objects.get(id=2)
-        UserWorldProgressRecord.objects.create(user=student, world=partially_completed_world)
-        # add level and question records for partially finished world
-        sections = Section.objects.filter(world=partially_completed_world)[:2]  # change num of completed sections here
-        for section in sections:
-            levels = Level.objects.filter(section=section)
-            questions = Question.objects.filter(section=section)
-            for level in levels:
-                UserLevelProgressRecord.objects.create(user=student, level=level, is_completed=True,
-                                                       completed_time=self.completed_time)
-                if level.is_final_boss_level:
-                    num_of_questions_to_add = 10
-                else:
-                    num_of_questions_to_add = 3
-                for i in range(num_of_questions_to_add):
-                    question = random.choice(questions)
-                    QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
-                                                  points_change=points_map[question.difficulty], reason="Correct",
-                                                  is_completed=True, completed_time=self.completed_time)
+        for student_record in student_records: # should be in order of creation, i.e. josh, shenrui, wanqian, tom, mary, jerry, ayden, jayden
+            self.stdout.write("\tSimulating %s's progress..." % student_record["username"])
+            student = User.objects.get(username=student_record["username"])
+            gm = GameManager(student)
 
-        # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
-        next_level = Level.objects.get(id=16)
-        UserLevelProgressRecord.objects.create(user=student, level=next_level)
+            # get current actual section id to help find actual level id later
+            if student_record["worlds_finished"] > 0:
+                current_section_id = student_record["worlds_finished"] * 3 + student_record["current_section"]
+            else:
+                current_section_id = student_record["current_section"]
 
-        self.stdout.write("...finished simulating Student 1")
+            current_level_id = (current_section_id-1) * 3 + student_record["current_level"]
+            position = gm.get_user_position_in_world()
+            if not student_record["completed_mode"]:
+                while position.id != current_level_id:
+                    position = self.__simulate_answering_questions(gm, position)
+            else: # student finished campaign mode
+                while True: # simulate until world complete
+                    try:
+                        position = self.__simulate_answering_questions(gm, position)
+                    except PermissionDenied:
+                        # denied permission because world is complete. so exit loop
+                        break
 
-    def __simulate_student2_progress(self):
-        self.stdout.write("Simulating Student 2...")
-        # Student2 will have finished 2 Worlds, and has cleared 3 Levels in the 1st Section of the last World
-        student = User.objects.get(username="josh")
+        self.stdout.write("...finished simulating")
 
-        # add records for finished world
-        completed_worlds = World.objects.filter(id__range=(0, 2))  # change here for num of finished worlds
-        for world in completed_worlds:
-            UserWorldProgressRecord.objects.create(user=student, world=world, is_completed=True,
-                                                   completed_time=self.completed_time)
-            # add level and question records for finished world
-            sections = Section.objects.filter(world=world)
-            for section in sections:
-                levels = Level.objects.filter(section=section)
-                questions = Question.objects.filter(section=section)
-                for level in levels:
-                    UserLevelProgressRecord.objects.create(user=student, level=level, is_completed=True,
-                                                           completed_time=self.completed_time)
-                    if level.is_final_boss_level:
-                        num_of_questions_to_add = 10
-                    else:
-                        num_of_questions_to_add = 3
-                    for i in range(num_of_questions_to_add):
-                        question = random.choice(questions)
-                        QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
-                                                      points_change=points_map[question.difficulty], reason="Correct",
-                                                      is_completed=True, completed_time=self.completed_time)
+    # for use in __simulate_students_campaign_mode and __simulate_assignment_playthroughs
+    def __simulate_answering_questions(self, gm, position):
+        questions = gm.get_questions(position.section.world)
+        question_answer_set = []
+        for question in questions:
+            question_record = QuestionRecord.objects.get(id=question["record_id"])
+            if random.choices(self.answers_boolean,
+                              weights=self.correct_answer_prob)[0]: # have to index cause random.choices returns an array
+                # answer correctly
+                answer = question["answers"].get(is_correct=True)
+            else:  # submit random wrong answer
+                answer = random.choice(question["answers"].filter(is_correct=False))
+            question_answer_set.append({"question_record": question_record, "answer": answer})
+        gm.answer_questions(question_answer_set)
+        return gm.get_user_position_in_world()
 
-        # add records for partially finished world
-        partially_completed_world = World.objects.get(id=3)
-        UserWorldProgressRecord.objects.create(user=student, world=partially_completed_world)
-        # add level and question records for partially finished world
-        section = Section.objects.filter(world=partially_completed_world)[0]
-        levels = Level.objects.filter(section=section)[:3]
-        questions = Question.objects.filter(section=section)
-        for level in levels:
-            UserLevelProgressRecord.objects.create(user=student, level=level, is_completed=True,
-                                                   completed_time=self.completed_time)
-            num_of_questions_to_add = 3
-            for i in range(num_of_questions_to_add):
-                question = random.choice(questions)
-                QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
-                                              points_change=points_map[question.difficulty], reason="Correct",
-                                              is_completed=True, completed_time=self.completed_time)
-
-        # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
-        next_level = Level.objects.get(id=22)
-        UserLevelProgressRecord.objects.create(user=student, level=next_level)
-
-        self.stdout.write("...finished simulating Student 2")
-
-    def __simulate_student3_progress(self):
-        self.stdout.write("Simulating Student 3...")
-        # Student3 will have finished 11 Levels (so 2/3 Sections completed) of the 1st World,
-        # with the Final Boss Level not cleared yet
-        student = User.objects.get(username="shenrui")
-        # add records for partially finished world
-        partially_completed_world = World.objects.get(id=1)
-        UserWorldProgressRecord.objects.create(user=student, world=partially_completed_world)
-        # add level and question records for completed sections
-        sections = Section.objects.filter(world=partially_completed_world)[:2]
-        for section in sections:
-            levels = Level.objects.filter(section=section)
-            questions = Question.objects.filter(section=section)
-            for level in levels:
-                UserLevelProgressRecord.objects.create(user=student, level=level, is_completed=True,
-                                                       completed_time=self.completed_time)
-                if level.is_final_boss_level:
-                    num_of_questions_to_add = 10
-                else:
-                    num_of_questions_to_add = 3
-                for i in range(num_of_questions_to_add):
-                    question = random.choice(questions)
-                    QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
-                                                  points_change=points_map[question.difficulty], reason="Correct",
-                                                  is_completed=True, completed_time=self.completed_time)
-        # add level and question records for last incomplete section
-        section = Section.objects.filter(world=partially_completed_world)[2]
-        levels = Level.objects.filter(section=section)[:3]
-        questions = Question.objects.filter(section=section)
-        for level in levels:
-            UserLevelProgressRecord.objects.create(user=student, level=level, is_completed=True,
-                                                   completed_time=self.completed_time)
-            num_of_questions_to_add = 3
-            for i in range(num_of_questions_to_add):
-                question = random.choice(questions)
-                QuestionRecord.objects.create(user=student, question=question, level=level, is_correct=True,
-                                              points_change=points_map[question.difficulty], reason="Correct",
-                                              is_completed=True, completed_time=self.completed_time)
-
-        # unlock next level (PLEASE UPDATE THIS IF ANY CHANGES ARE MADE TO SIMULATION CAUSE I HARDCODED THIS)
-        next_level = Level.objects.get(id=10)
-        UserLevelProgressRecord.objects.create(user=student, level=next_level)
-
-        self.stdout.write("...finished simulating Student 3")
-
-    def __create_custom_worlds(self):
+    def __create_challenge_mode(self):
         '''
-        Creates a Custom World for each of the 3 Students
+        Creates a Custom World for the 1st 3 Students
         '''
         self.stdout.write("Creating Custom Worlds...")
 
@@ -324,8 +249,8 @@ class Command(BaseCommand):
             custom_world = CustomWorld.objects.create(world_name=world_name, topic=topics[i], is_custom_world=True, access_code=access_code, created_by=student)
             section = Section.objects.create(world=custom_world, sub_topic_name=topics[i])
 
-            # create 3 levels
-            for i in range(3):
+            # create 4 levels
+            for i in range(4):
                 # create Level
                 level_name = "Custom Level " + str(i + 1)
                 Level.objects.create(section=section, level_name=level_name)
@@ -345,24 +270,25 @@ class Command(BaseCommand):
 
     def __create_assignments(self):
         '''
-        Creates an Assignment for each of the 2 Teachers
+        Creates an Assignment for each of the 2 Teachers for each of their Classes
         '''
-        self.stdout.write("Creating assignments...")
+        self.stdout.write("Creating Assignments...")
 
         teachers = User.objects.filter(is_staff=True, is_superuser=False)
         topics = ["Strategy Pattern", "Observer Pattern"]
         for i in range(len(teachers)):
             teacher = teachers[i]
+            classes = Class.objects.filter(teacher=teacher)
 
             # create custom world first
-            world_name = topics[i]
+            world_name = "%s's Assignment World" % teacher.first_name
             access_code = teacher.first_name[:3].upper() + "000"
             custom_world = CustomWorld.objects.create(world_name=world_name, topic=topics[i], is_custom_world=True,
                                                       access_code=access_code, created_by=teacher)
             section = Section.objects.create(world=custom_world, sub_topic_name=topics[i])
 
-            # create 3 levels
-            for j in range(3):
+            # create 4 levels
+            for j in range(4):
                 # create Level
                 level_name = "Assignment Level " + str(j + 1)
                 Level.objects.create(section=section, level_name=level_name)
@@ -379,20 +305,59 @@ class Command(BaseCommand):
                 Answer.objects.create(question=question, answer="Assignment Answer 4", is_correct=True)
 
             # create assignment
-            class_group = Class.objects.get(teacher=teacher)
-            Assignment.objects.create(custom_world=custom_world, class_group=class_group, name=topics[i], deadline=self.assignment_deadline)
+            for class_group in classes:
+                Assignment.objects.create(custom_world=custom_world, class_group=class_group, name=topics[i], deadline=self.assignment_deadline)
 
         self.stdout.write("...assignments created")
 
-    # def __simulate_assignment_playthroughs(self):
-    #     """
-    #     First Assignment will be played 2 times
-    #     Second Assignment will be played 1 time
-    #     """
-    #
-    #     # Assignment 1
-    #     assignment1 = Assignment.objects.get(id=1).custom_world
-    #     assignment1_section = Section.objects.get(world=assignment1)
-    #     questions = Question.objects.filter(section=assignment1_section)
-    #     students = User.objects.filter(id__range=(8,10))
-    #     for student in students:
+    def __simulate_challenge_mode_playthroughs(self):
+        play_records = [
+            {"username": "josh", "user_world": "shenrui"},
+            {"username": "shenrui", "user_world": "wanqian"},
+            {"username": "wanqian", "user_world": "josh"},
+            {"username": "tom", "user_world": "josh"},
+            {"username": "mary", "user_world": "shenrui"},
+            {"username": "jerry", "user_world": "wanqian"},
+        ]
+
+        self.stdout.write("Simulating Challenge Mode playthroughs...")
+
+        for record in play_records:
+            student = User.objects.get(username=record["username"])
+            custom_world_owner = User.objects.get(username=record["user_world"])
+            custom_world = CustomWorld.objects.get(created_by=custom_world_owner)
+            self.stdout.write("\tsimulating %s's progress in %s's challenge world..." % (student.username,
+                              custom_world_owner.username))
+            gm = GameManager(student)
+            position = gm.get_user_position_in_world(custom_world)
+            while True:  # simulate until world complete
+                try:
+                    position = self.__simulate_answering_questions(gm, position)
+                except PermissionDenied:
+                    # denied permission because world is complete. so exit loop
+                    break
+
+        self.stdout.write("...finished simulating")
+    
+    
+    def __simulate_assignment_playthroughs(self):
+        """
+        1 Student from each Class will play the Assignment
+        """
+        self.stdout.write("Simulating Assignment playthroughs...")
+
+        classes = Class.objects.all()
+        for class_group in classes:
+            student = StudentProfile.objects.filter(class_group=class_group)[0].student
+            self.stdout.write("\tsimulating %s's progress in assignment..." % student.username)
+            custom_world = Assignment.objects.get(class_group=class_group).custom_world
+            gm = GameManager(student)
+            position = gm.get_user_position_in_world(custom_world)
+            while True:  # simulate until world complete
+                try:
+                    position = self.__simulate_answering_questions(gm, position)
+                except PermissionDenied:
+                    # denied permission because world is complete. so exit loop
+                    break
+
+        self.stdout.write("...finished simulating")
