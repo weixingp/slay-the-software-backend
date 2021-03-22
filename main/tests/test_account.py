@@ -6,6 +6,11 @@ from main.tests.test_setup import TestSetUp
 
 class TestAccount(TestSetUp):
     def test_first_login(self):
+        """
+        API: /api/account/login/
+        Test login with default password (Password not yet changed)
+        """
+
         data = {
             "username": "tester1",
             "password": "tester123",
@@ -17,6 +22,27 @@ class TestAccount(TestSetUp):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         # Data check
         self.assertEqual(res.data['token'], None)
+
+    def test_login_success(self):
+        """
+        API: /api/account/login/
+        Test login successfully
+        """
+
+        url = "/api/account/login/"
+        data = {
+            "username": "tester1",
+            "password": "tester123",
+        }
+        self.random_user1.student_profile.has_reset_password = True
+        self.random_user1.student_profile.save()
+
+        res = self.client.post(url, data=data, format="json")
+        # Status check
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        # Data check
+        has_token = True if res.data['token'] else False
+        self.assertEqual(has_token, True)
 
     def test_change_password_with_same_password(self):
         """
@@ -60,24 +86,3 @@ class TestAccount(TestSetUp):
 
         user = User.objects.get(username=data['username'])
         self.assertEqual(user.student_profile.has_reset_password, True)
-
-    def test_login_success(self):
-        """
-        API: /api/account/login/
-        Test login successfully
-        """
-
-        url = "/api/account/login/"
-        data = {
-            "username": "tester1",
-            "password": "tester123",
-        }
-        self.random_user1.student_profile.has_reset_password = True
-        self.random_user1.student_profile.save()
-
-        res = self.client.post(url, data=data, format="json")
-        # Status check
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        # Data check
-        has_token = True if res.data['token'] else False
-        self.assertEqual(has_token, True)
