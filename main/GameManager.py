@@ -325,7 +325,7 @@ class GameManager:
                 index += 1
 
             # Must answer at least 5 questions correctly.
-            if correct_counter > 5:
+            if correct_counter >= 5:
                 # Unlock the next level
                 self.__complete_level(level)
             return res
