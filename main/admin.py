@@ -2,24 +2,46 @@ from django.contrib import admin
 from django.db.models import Sum, Avg
 from django.shortcuts import render
 from django.urls import path
-
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import *
 from rest_framework.authtoken.models import Token
 
+
 # Register your models here.
+
+@admin.register(StudentProfile)
+class StudentProfileAdmin(admin.ModelAdmin):
+    list_display = ('student', 'year_of_study', 'class_group', 'has_reset_password')
+    list_filter = ('class_group', )
+    search_fields = ('student__email', 'student__username',)
+
+
+class ProfileInline(admin.StackedInline):
+    model = StudentProfile
+    can_delete = True
+    verbose_name_plural = 'Profile'
+    fk_name = 'student'
+
+
+class UserAdmin(BaseUserAdmin):
+    inlines = (ProfileInline,)
+
 
 class AssignmentAdmin(admin.ModelAdmin):
     list_display = ('custom_world', 'class_group', 'name', 'deadline', 'date_created', 'date_modified',)
     list_filter = ('class_group',)
 
+
 class AnswerAdmin(admin.TabularInline):
     model = Answer
+
 
 class QuestionAdmin(admin.ModelAdmin):
     list_display = ('question', 'section', 'difficulty', 'created_by', 'date_created', 'date_modified',)
     list_filter = ('section', 'difficulty', 'created_by',)
     exclude = ['created_by', ]
     inlines = [AnswerAdmin, ]
+
 
 class CustomWorldAdmin(admin.ModelAdmin):
     list_display = ('created_by', 'access_code', 'is_active',)
@@ -67,7 +89,7 @@ class CustomAdminSite(admin.AdminSite):
         - Per Section, display each Question and the number of times it was answered correctly and incorrectly
         """
 
-        campaign_mode_stats = [] # array of worlds and their stats
+        campaign_mode_stats = []  # array of worlds and their stats
         campaign_worlds = World.objects.filter(is_custom_world=False)
         for world in campaign_worlds:
             sections = Section.objects.filter(world=world)
@@ -133,10 +155,11 @@ class CustomAdminSite(admin.AdminSite):
     # def assignment_statistics_view(self):
 
 
-
-
 custom_admin_site = CustomAdminSite()
-custom_admin_site.register(User)
+
+admin.site.unregister(User)
+custom_admin_site.register(User, UserAdmin)
+
 custom_admin_site.register(Token)
 custom_admin_site.register(Assignment, AssignmentAdmin)
 custom_admin_site.register(Question, QuestionAdmin)
