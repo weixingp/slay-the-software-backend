@@ -10,7 +10,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import CreateAPIView, RetrieveAPIView
+from rest_framework.generics import CreateAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
@@ -71,10 +71,21 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
-        login(request, user)
-        data = UserSerializer(user).data
-        data["token"] = token.key
+
+        # Check if student has reset their password for the first time
+        try:
+            student = StudentProfile.objects.get(student=user)
+        except StudentProfile.DoesNotExist:
+            raise ValidationError(detail="Profile not yet created, please contact teacher to create.")
+        if student.has_reset_password:
+            token, created = Token.objects.get_or_create(user=user)
+            login(request, user)
+            data = UserSerializer(user).data
+            data["token"] = token.key
+        else:
+            data = UserSerializer(user).data
+            data["token"] = None
+            data["error"] = "Please reset your password first."
         return Response(data)
 
 
@@ -83,6 +94,23 @@ class LogoutView(APIView):
         user = request.user
         logout(request)
         return Response({"success": True, "user_id": user.id})
+
+
+class ChangePasswordView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        if request.data['password'] == request.data['new_password']:
+            raise ValidationError(detail="New password can't be the same as old password.")
+
+        user.set_password(request.data['new_password'])
+        user.save()
+        user.student_profile.has_reset_password = True
+        user.student_profile.save()
+        return Response({"success": True})
 
 
 class RegisterView(CreateAPIView):

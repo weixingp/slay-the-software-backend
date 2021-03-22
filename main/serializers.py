@@ -32,6 +32,10 @@ class LoginSerializer(serializers.Serializer):
         return {'user': user}
 
 
+class ChangePasswordSerializer(LoginSerializer):
+    new_password = serializers.CharField()
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
