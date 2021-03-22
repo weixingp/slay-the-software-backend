@@ -31,7 +31,7 @@ class GameManager:
     def __init__(self, user):
         self.user = user
 
-    def instantiate_position(self, world=None):
+    def __instantiate_position(self, world=None):
         # Sets the initial location
 
         if not world or not world.is_custom_world:
@@ -71,7 +71,7 @@ class GameManager:
 
         if not progress:
             # User doesn't have any record at all
-            position = self.instantiate_position(world)
+            position = self.__instantiate_position(world)
         elif not a and b:
             # User has finished the main worlds / custom world
             position = progress.order_by('-id')[0].level  # Last position
@@ -116,9 +116,6 @@ class GameManager:
         return difficulty
 
     def __new_boss_question_record_session(self, level, questions):
-        if not level.is_final_boss_level:
-            raise PermissionDenied(detail="This level is not allowed to get boss level questions. ")
-
         records = QuestionRecord.objects.filter(
             user=self.user,
             level=level,
@@ -139,7 +136,7 @@ class GameManager:
             raise PermissionDenied(detail="You are not allowed to get questions, world completed.")
 
         record_list = []
-        if not records:
+        if not uncompleted:
             for question in questions:
                 record = QuestionRecord.objects.create(
                     user=self.user,
