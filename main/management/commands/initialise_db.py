@@ -218,7 +218,8 @@ class Command(BaseCommand):
         self.stdout.write("...finished simulating")
 
     # for use in __simulate_students_campaign_mode and __simulate_assignment_playthroughs
-    def __simulate_answering_questions(self, gm, position):
+    def __simulate_answering_questions(self, gm, position, world=None):
+        self.stdout.write("\t...current Level: %s" % position.id)
         questions = gm.get_questions(position.section.world)
         question_answer_set = []
         for question in questions:
@@ -231,6 +232,8 @@ class Command(BaseCommand):
                 answer = random.choice(question["answers"].filter(is_correct=False))
             question_answer_set.append({"question_record": question_record, "answer": answer})
         gm.answer_questions(question_answer_set)
+        if world:
+            return gm.get_user_position_in_world(world)
         return gm.get_user_position_in_world()
 
     def __create_challenge_mode(self):
@@ -332,7 +335,7 @@ class Command(BaseCommand):
             position = gm.get_user_position_in_world(custom_world)
             while True:  # simulate until world complete
                 try:
-                    position = self.__simulate_answering_questions(gm, position)
+                    position = self.__simulate_answering_questions(gm, position, custom_world)
                 except PermissionDenied:
                     # denied permission because world is complete. so exit loop
                     break
@@ -355,7 +358,7 @@ class Command(BaseCommand):
             position = gm.get_user_position_in_world(custom_world)
             while True:  # simulate until world complete
                 try:
-                    position = self.__simulate_answering_questions(gm, position)
+                    position = self.__simulate_answering_questions(gm, position, custom_world)
                 except PermissionDenied:
                     # denied permission because world is complete. so exit loop
                     break
