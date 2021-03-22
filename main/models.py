@@ -87,7 +87,7 @@ class Class(models.Model):
 
 
 class Assignment(models.Model):
-    custom_world = models.ForeignKey(CustomWorld, on_delete=models.CASCADE)
+    custom_world = models.OneToOneField(CustomWorld, on_delete=models.CASCADE)
     class_group = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="assignments")
     name = models.CharField(max_length=30)
     deadline = models.DateTimeField(auto_now=False)
