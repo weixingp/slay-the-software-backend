@@ -319,6 +319,14 @@ class CheckAnswerView(APIView):
 class CustomQuestionView(APIView):
     def get(self, request):
         questions = Question.objects.filter(created_by=request.user)
+        world_id = request.query_params.get("world_id")
+        if world_id:
+            world = CustomWorld.objects.get(id=world_id)
+            if world.created_by != request.user:
+                return Response({"Permission Denied": "You do not have access to this Custom World"},
+                                status=status.HTTP_403_FORBIDDEN)
+            section = Section.objects.get(world_id=world_id)
+            questions = questions.filter(section=section)
         serializer = CreateQuestionSerializer(questions, many=True)
         return Response(serializer.data)
 
@@ -329,7 +337,7 @@ class CustomQuestionView(APIView):
             # check if this Section belongs to a Custom World, and if this Section has fewer than 10 questions
             # if both are true, then save
             number_of_questions_in_section = len(Question.objects.filter(section=section))
-            if section.world.is_custom_world and number_of_questions_in_section < 10:
+            if section.world.is_custom_world and number_of_questions_in_section < 12:
                 serializer.save(created_by=request.user, difficulty=1, section=section)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
@@ -350,7 +358,7 @@ class CustomQuestionListView(APIView):
             serializer = CreateQuestionSerializer(question)
             return Response(serializer.data)
         else:
-            return Response(status=status.HTTP_403_FORBIDDEN)
+            return Response({"Permission Denied": "You do not own this question"}, status=status.HTTP_403_FORBIDDEN)
 
     def put(self, request, pk):
         if request.user == Question.objects.get(pk=pk).created_by:
@@ -384,7 +392,11 @@ class CustomWorldView(APIView):
         print(data)
         data["created_by"] = self.get_user(request.user.id).id
         data["is_custom_world"] = True
-        data["access_code"] = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        while True: # generate unique access_code
+            access_code = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            if access_code not in CustomWorld.objects.all().values_list("access_code", flat=True):
+                data["access_code"] = access_code
+                break
         serializer = CustomWorldSerializer(data=data)
 
         if serializer.is_valid():
