@@ -279,7 +279,7 @@ class GameManager:
             self.__award_points(qr, is_correct, points)
 
             qn_index = self.__get_question_index(qr.level)
-            if qn_index == self.normal_level_qn:
+            if qn_index == self.normal_level_qn - 1:
                 # Unlock the next level
                 self.__complete_level(qr.level)
 
