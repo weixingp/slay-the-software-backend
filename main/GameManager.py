@@ -124,7 +124,7 @@ class GameManager:
         # completed = records.filter(is_completed=True)
         uncompleted = records.filter(is_completed=False)
 
-        if uncompleted and len(uncompleted) != 10:
+        if uncompleted and len(uncompleted) != self.boss_level_qn:
             raise ValidationError(detail="Database data mismatch, please contact Admin.")
 
         progress = UserLevelProgressRecord.objects.filter(
@@ -189,19 +189,19 @@ class GameManager:
         levels = Level.objects.filter(id__gt=position.id, section=position.section).order_by('id')
         if not levels:
             if not world:
+                # Main world logic
                 # Try the next section
                 next_section = Section.objects.filter(id__gt=position.section.id, world__is_custom_world=False)
                 if not next_section:
                     # Try the next world
                     next_world = World.objects.filter(id__gt=position.section.world.id, is_custom_world=False)
-                    print(next_world)
                     if not next_world:
                         # User has finished the main world
                         return None
                     else:
                         next_section = Section.objects.filter(world=next_world[0]).order_by('id')
                         if next_section:
-                            next_world = next_world[0]
+                            next_section = next_section[0]
                         else:
                             # World is empty :(
                             return None
@@ -210,6 +210,7 @@ class GameManager:
 
                 next_level = Level.objects.filter(section=next_section).order_by('id')[0]
             else:
+                # Custom world.
                 # User has finished the custom world
                 return None
         else:
