@@ -121,10 +121,10 @@ class GameManager:
             level=level,
         )
 
-        completed = records.filter(is_completed=True)
+        # completed = records.filter(is_completed=True)
         uncompleted = records.filter(is_completed=False)
 
-        if completed and uncompleted:
+        if uncompleted and len(uncompleted) != 10:
             raise ValidationError(detail="Database data mismatch, please contact Admin.")
 
         progress = UserLevelProgressRecord.objects.filter(
@@ -146,7 +146,7 @@ class GameManager:
                 record_list.append(record)
             return record_list
         else:
-            return records
+            return list(uncompleted)
 
     def __new_question_record_session(self, level, question):
         records = QuestionRecord.objects.filter(
