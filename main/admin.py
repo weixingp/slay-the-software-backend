@@ -46,6 +46,14 @@ class QuestionAdmin(admin.ModelAdmin):
 class CustomWorldAdmin(admin.ModelAdmin):
     list_display = ('created_by', 'access_code', 'is_active',)
 
+class SectionAdmin(admin.ModelAdmin):
+    list_display = ('sub_topic_name', 'index', 'world_id',)
+
+class WorldAdmin(admin.ModelAdmin):
+    list_display = ('world_name', 'topic', 'is_custom_world', 'index',)
+
+class LevelAdmin(admin.ModelAdmin):
+    list_display = ('level_name', 'is_boss_level', 'is_final_boss_level', 'section_id',)
 
 class CustomAdminSite(admin.AdminSite):
     def get_app_list(self, request):
@@ -164,6 +172,9 @@ custom_admin_site.register(Token)
 custom_admin_site.register(Assignment, AssignmentAdmin)
 custom_admin_site.register(Question, QuestionAdmin)
 custom_admin_site.register(CustomWorld, CustomWorldAdmin)
+custom_admin_site.register(Section, SectionAdmin)
+custom_admin_site.register(World, WorldAdmin)
+custom_admin_site.register(Level, LevelAdmin)
 # custom_admin_site.register(Answer, AnswerAdmin)
 # admin.site.register(Assignment, AssignmentAdmin)
 # admin.site.register(Question, QuestionAdmin)
