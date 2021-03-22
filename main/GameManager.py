@@ -11,6 +11,7 @@ from main.models import UserLevelProgressRecord, UserWorldProgressRecord, World,
 
 
 class GameManager:
+
     difficulty_points_map = {  # Getting correct answer
         True: {
             "1": 10,
@@ -237,6 +238,7 @@ class GameManager:
 
         Sets the points for answering question and marks the question record completed
         """
+
         question_record.is_completed = True
         question_record.points_change = points
         question_record.completed_time = now()
@@ -353,10 +355,10 @@ class GameManager:
             level=position,
         )
 
-        return len(qr)
+        return len(qr) - 1
 
     def __get_single_question_set(self, position):
-        qn_index = self.__get_question_index(position)
+
 
         # if qn_index > self.normal_level_qn - 1:
         #     raise PermissionDenied(detail="You are not allowed to get more questions of this level.")
@@ -404,6 +406,7 @@ class GameManager:
 
         # Get the answer for this question
         answers = Answer.objects.filter(question=question)
+        qn_index = self.__get_question_index(position)
         res = [{
             "question": question,
             "answers": answers,
