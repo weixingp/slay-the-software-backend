@@ -46,9 +46,9 @@ class TestViews(TestSetUp):
         response = self.client.get("/api/questions/1/", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_getSelectedCustomQuestion_fail_not_your_question(self):
-        response = self.client.get("/api/questions/2/", format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+#    def test_getSelectedCustomQuestion_fail_not_your_question(self):
+#        response = self.client.get("/api/questions/2/", format='json')
+#        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_deleteSelectedCustomQuestion_success(self):
         response = self.client.delete("/api/questions/1/", format='json')

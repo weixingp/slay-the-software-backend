@@ -6,7 +6,6 @@ from main.models import Question, Section, World, Answer, StudentProfile, Class
 class TestSetUp(APITestCase):
     def setUp(self):
         self.question_url = '/api/questions/'
-        self.questionlist_url = '/api/questions/1/'
 
         self.random_user1 = User.objects.create_user(username="tester1", password="tester123")
         user = User.objects.create_user(username="tester2", password="tester123")
@@ -56,9 +55,9 @@ class TestSetUp(APITestCase):
             question_id=question1.id
         )
 
-        Question.objects.create(
-            question="question2",
-            section=section,
-            difficulty="1",
-            created_by_id="2"
-        )
+#        Question.objects.create(
+#            question="question2",
+#            section=section,
+#            difficulty="1",
+#            created_by_id="2"
+#        )
