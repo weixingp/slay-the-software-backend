@@ -42,29 +42,6 @@ class GroupViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-# Function-based view example
-@api_view(['GET'])
-def hello_world(request):
-    return Response({"message": "Hello, world!"})
-
-
-# Class-based view example
-class HelloWorld2(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, format=None):
-        content = {
-            'user': unicode(request.user),  # `django.contrib.auth.User` instance.
-            'auth': unicode(request.auth),  # None
-        }
-        return Response(content)
-
-
-class CsrfExemptSessionAuthentication(authentication.SessionAuthentication):
-    def enforce_csrf(self, request):
-        return
-
-
 class LoginView(APIView):
     permission_classes = (permissions.AllowAny,)
     authentication_classes = (TokenAuthentication,)
@@ -140,19 +117,17 @@ class LeaderboardView(APIView):
         print(request.META)
         if world_id:  # get leaderboard of a particular world
             try:
-                world_id = int(world_id)
-            except ValueError:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-            sections = Section.objects.filter(world_id=world_id)  # get sections in the world
-            section_ids = [section.id for section in sections]  # extract section ids
-            level_ids = []
-            for section_id in section_ids:
-                levels = Level.objects.filter(section_id=section_id)  # get levels in the section
-                level_ids += [level.id for level in levels]  # extract level ids
-            student_records = QuestionRecord.objects.filter(
-                level_id__in=level_ids)  # extract level records which fall in level_ids
-        else:  # get overall leaderboard
-            student_records = QuestionRecord.objects.all()
+                world = World.objects.get(id=world_id)
+            except World.DoesNotExist:
+                raise NotFound("Invalid World ID.")
+            sections = Section.objects.filter(world_id=world)  # get sections in the world
+        else:  # get overall leaderboard of campaign worlds
+            campaign_worlds = World.objects.filter(is_custom_world=False)
+            sections = Section.objects.filter(world__in=campaign_worlds)
+
+        # get records of each question in the world(s)
+        levels = Level.objects.filter(section__in=sections)
+        student_records = QuestionRecord.objects.filter(level__in=levels)
 
         # sum up points for each student and sort in desc order
         student_points = student_records.values('user_id', 'user__first_name', 'user__last_name') \
