@@ -11,7 +11,7 @@ class SetUp(APITestCase):
     def setUp(self):
         self.username = "test"
         self.password = "test123"
-        self.user = User.objects.create_user(username="test", password="test123")
+        self.user = User.objects.create_user(username=self.username, password=self.password)
         teacher = User.objects.create_user(username="teacher", password="teacher123")
         test_class = Class.objects.create(
             teacher=teacher,
