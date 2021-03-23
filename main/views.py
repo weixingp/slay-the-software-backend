@@ -119,7 +119,7 @@ class LeaderboardView(APIView):
             try:
                 world = World.objects.get(id=world_id)
             except World.DoesNotExist:
-                raise NotFound("Invalid World ID.")
+                raise NotFound(detail="Invalid World ID.")
             sections = Section.objects.filter(world_id=world)  # get sections in the world
         else:  # get overall leaderboard of campaign worlds
             campaign_worlds = World.objects.filter(is_custom_world=False)
@@ -145,17 +145,17 @@ class LeaderboardView(APIView):
         user_id = request.query_params.get("user_id")
         if user_id:
             try:
-                user_id = int(user_id)
-            except ValueError:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
+                student = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                raise NotFound(detail="Invalid User ID specified, or User is not a Student.")
             student_exists = False
-            for student in student_points:
+            for student_record in student_points:
                 if student["user_id"] == int(user_id):
                     serializer = LeaderboardSerializer(student)
                     student_exists = True
                     break
             if not student_exists:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
+                raise ParseError(detail="This Student has not started playing Campaign Mode.")
         else:
             # apply offset, if any
             offset = request.query_params.get("offset")
@@ -163,7 +163,7 @@ class LeaderboardView(APIView):
                 try:
                     student_points = student_points[int(offset) - 1:]
                 except (ValueError, AssertionError):
-                    return Response(status=status.HTTP_400_BAD_REQUEST)
+                    raise ParseError(detail="Invalid offsets specified")
 
             # apply limit, if any
             limit = request.query_params.get("limit")
@@ -171,7 +171,7 @@ class LeaderboardView(APIView):
                 try:
                     student_points = student_points[:int(limit)]
                 except (ValueError, AssertionError):
-                    return Response(status=status.HTTP_400_BAD_REQUEST)
+                    raise ParseError(detail="Invalid limit applied")
 
             serializer = LeaderboardSerializer(student_points, many=True)
 
@@ -192,12 +192,10 @@ class WorldDetails(APIView):
         try:
             return World.objects.get(id=id)
         except World.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            raise NotFound("World with specified ID does not exist")
 
     def get(self, request, id):
         world = self.get_object(id)
-        if isinstance(world, Response):  # custom_world not found
-            return world
         serializer = WorldSerializer(world)
         return Response(serializer.data)
 
@@ -300,8 +298,7 @@ class CustomQuestionView(APIView):
         if world_id:
             world = CustomWorld.objects.get(id=world_id)
             if world.created_by != request.user:
-                return Response({"Permission Denied": "You do not have access to this Custom World"},
-                                status=status.HTTP_403_FORBIDDEN)
+                raise PermissionDenied(detail="You do not have access to this Custom World")
             section = Section.objects.get(world_id=world_id)
             questions = questions.filter(section=section)
         serializer = CreateQuestionSerializer(questions, many=True)
@@ -311,7 +308,7 @@ class CustomQuestionView(APIView):
         serializer = CreateQuestionSerializer(data=request.data)
         if serializer.is_valid():
             section = Section.objects.get(id=request.data['section'])
-            # check if this Section belongs to a Custom World, and if this Section has fewer than 10 questions
+            # check if this Section belongs to a Custom World, and if this Section has fewer than 12 questions
             # if both are true, then save
             number_of_questions_in_section = len(Question.objects.filter(section=section))
             if section.world.is_custom_world and number_of_questions_in_section < 12:
@@ -322,35 +319,37 @@ class CustomQuestionView(APIView):
 
 
 class CustomQuestionListView(APIView):
+    permission_classes = [IsOwnerOrReadOnly]
 
     def get_object(self, pk):
         try:
             return Question.objects.get(pk=pk)
-        except Question.objects.get(pk=pk):
-            raise status.HTTP_404_NOT_FOUND
+        except Question.DoesNotExist:
+            raise NotFound(detail="Invalid Question ID specified")
 
     def get(self, request, pk):
-        if request.user == Question.objects.get(pk=pk).created_by:
-            question = self.get_object(pk)
-            serializer = CreateQuestionSerializer(question)
-            return Response(serializer.data)
-        else:
-            return Response({"Permission Denied": "You do not own this question"}, status=status.HTTP_403_FORBIDDEN)
+        question = self.get_object(pk)
+        serializer = CreateQuestionSerializer(question)
+        return Response(serializer.data)
+        # if request.user == Question.objects.get(pk=pk).created_by:
+        #     question = self.get_object(pk)
+        #     serializer = CreateQuestionSerializer(question)
+        #     return Response(serializer.data)
+        # else:
+        #     raise PermissionDenied(detail="You do not own this question")
 
     def put(self, request, pk):
-        if request.user == Question.objects.get(pk=pk).created_by:
-            question = self.get_object(pk)
-            serializer = EditQuestionSerializer(question, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        question = self.get_object(pk)
+        serializer = EditQuestionSerializer(question, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        if request.user == Question.objects.get(pk=pk).created_by:
-            question = self.get_object(pk)
-            question.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        question = self.get_object(pk)
+        question.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CustomWorldView(APIView):
@@ -384,7 +383,7 @@ class CustomWorldView(APIView):
             section = Section.objects.create(world=created_world, sub_topic_name=created_world.world_name)
 
             # create Level
-            for i in range(10):
+            for i in range(4):
                 level_name = "Level %s" % (i + 1)
                 Level.objects.create(section=section, level_name=level_name)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -398,20 +397,15 @@ class CustomWorldDetails(APIView):
         try:
             return CustomWorld.objects.get(access_code=access_code)
         except CustomWorld.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return NotFound(detail="Invalid access code specified")
 
     def get(self, request, access_code):
         custom_world = self.get_object(access_code)
-        if isinstance(custom_world, Response):  # custom_world not found
-            return custom_world
         serializer = CustomWorldSerializer(custom_world)
         return Response(serializer.data)
 
     def put(self, request, access_code):
         custom_world = self.get_object(access_code)
-        if isinstance(custom_world, Response):  # custom_world not found
-            return custom_world
-
         serializer = CustomWorldSerializer(custom_world, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -442,7 +436,7 @@ class GetPositionView(APIView):
 class CampaignStatisticsView(APIView):
     def get(self, request):
         """
-        Retrieve the following statistics:
+        Retrieves the following statistics:
         - Per World in Campaign Mode, retrieve the average score (gained per Question in the Section) and total score per Section
         - Per Section, display each Question and the number of times it was answered correctly and incorrectly
         """
@@ -469,6 +463,12 @@ class CampaignStatisticsView(APIView):
 
 
 class AssignmentStatisticsView(APIView):
+    """
+    Retrieves the following statistics:
+    - For an Assignment Custom World, retrieve the average score (gained per Question in the Section), total score,
+    and for each Question, the number of times it was answered correctly and incorrectly
+    - If a Class name was specified, return the above statistics but only specific to that Class
+    """
     def get(self, request):
         access_code = request.query_params.get("access_code")
         class_name = request.query_params.get("class")
