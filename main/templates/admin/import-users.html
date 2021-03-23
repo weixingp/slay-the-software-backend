@@ -1,20 +1,61 @@
-{% extends "admin/base_site.html" %}
+{% extends 'admin/change_form.html' %}
 
 {% load i18n static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="{% static "/admin/js/vendor/jquery/jquery.min.js" %}"></script>
+    <script src="{% static "/admin/js/jquery.init.js" %}"></script>
+{% endblock %}
 
 {% block title %}
     Import users
 {% endblock %}
-
-{% block content %}
-    <div id="content-main">
-    <h1>Import users:</h1>
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+        <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+        &rsaquo; <a href="/admin/auth/user/">Users</a>
+        &rsaquo; <a href=".">{{ title }}</a>
     </div>
 {% endblock %}
 
-{% block sidebar %}
-    <button class="sticky toggle-nav-sidebar" id="toggle-nav-sidebar" aria-label="{% translate 'Toggle navigation' %}"></button>
-    <nav class="sticky" id="nav-sidebar">
-      {% include 'admin/app_list.html' with app_list=available_apps show_changelinks=False %}
-    </nav>
+{% block content %}
+    <div id="content-main">
+        {% if not processed %}
+            <form method="post" id="import_users_form" novalidate="" enctype="multipart/form-data" onSubmit="document.getElementById('submit').disabled=true;">
+                {% csrf_token %}
+                <div>
+                    <fieldset class="module aligned ">
+                        <div class="form-row field-class-group-select">
+                            <div>
+                                <label class="required" for="class_group">Class group to import into:</label>
+                                <div class="related-widget-wrapper">
+                                    <select name="class_group" required="" id="class_group">
+                                        <option value="" selected="">---------</option>
+                                        {% for class in class_groups %}
+                                            <option value="{{ class.id }}">{{ class.class_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row field-csv">
+                            <div>
+                                <label class="required" for="csv_file">CSV File:</label>
+                                <input type="file" name="csv_file" required="" id="csv_file" accept=".csv">
+                            </div>
+                        </div>
+                        <p style="margin-bottom: 0; font-size: 12px">CSV Format: NTU username, Password, First name, Last name, Year of study</p>
+                        <p class="small">*Please do not include header column</p>
+                    </fieldset>
+
+                    <div class="submit-row">
+                        <input type="submit" value="Upload" class="default" id="submit">
+                    </div>
+                </div>
+            </form>
+        {% else %}
+            <p>{{ message|safe }}</p>
+        {% endif %}
+    </div>
 {% endblock %}

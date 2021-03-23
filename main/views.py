@@ -162,8 +162,8 @@ class LeaderboardView(APIView):
                 raise NotFound(detail="User with specified ID does not exist")
             student_exists = False
             for student_record in student_points:
-                if student_record["user_id"] == int(user_id):
-                    serializer = LeaderboardSerializer(student)
+                if student_record["user_id"] == student.id:
+                    serializer = LeaderboardSerializer(student_record)
                     student_exists = True
                     break
             if not student_exists:
