@@ -111,15 +111,27 @@ class UserView(RetrieveAPIView):
 
 
 class LeaderboardView(APIView):
+    """
+    API for viewing leaderboard
+    """
 
     def get(self, request):
+        """
+        Retrieves leaderboard, filtered optionally by world_id, user_id, limit, and offset.
+        For each student, their total points, first_name, last_name, and rank are returned.
+        :raises NotFound: if world_id is specified, and World with that world_id does not exist
+        :raises NotFound: if user_id is specified, and User with that user_id does not exist
+        :raises ParseError: if user_id is specified, and the user has not played in Campaign Mode yet or the user is not a Student
+        :raises ParseError: if offset is specified, but it is invalid
+        :raises ParseError: if limit is specified, but it is invalid
+        """
         world_id = request.query_params.get("world_id")
         print(request.META)
         if world_id:  # get leaderboard of a particular world
             try:
                 world = World.objects.get(id=world_id)
             except World.DoesNotExist:
-                raise NotFound(detail="Invalid World ID.")
+                raise NotFound(detail="World with specified ID does not exist.")
             sections = Section.objects.filter(world_id=world)  # get sections in the world
         else:  # get overall leaderboard of campaign worlds
             campaign_worlds = World.objects.filter(is_custom_world=False)
@@ -147,15 +159,15 @@ class LeaderboardView(APIView):
             try:
                 student = User.objects.get(id=user_id)
             except User.DoesNotExist:
-                raise NotFound(detail="Invalid User ID specified, or User is not a Student.")
+                raise NotFound(detail="User with specified ID does not exist")
             student_exists = False
             for student_record in student_points:
-                if student["user_id"] == int(user_id):
+                if student_record["user_id"] == int(user_id):
                     serializer = LeaderboardSerializer(student)
                     student_exists = True
                     break
             if not student_exists:
-                raise ParseError(detail="This Student has not started playing Campaign Mode.")
+                raise ParseError(detail="This Student has not started playing Campaign Mode, or the User specified is not a Student.")
         else:
             # apply offset, if any
             offset = request.query_params.get("offset")
