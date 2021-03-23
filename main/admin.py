@@ -140,7 +140,7 @@ class CustomAdminSite(admin.AdminSite):
                     total, failed_rows = import_users(csv, class_group)
                     message = f"{total - len(failed_rows)} students imported successfully."
                     if failed_rows:
-                        message += f" {2} students failed to import. Please check row: <br /> {failed_rows}"
+                        message += f" {len(failed_rows)} students failed to import. Please check row: <br /> {failed_rows}"
 
                     message += "<br /><br /> <a href='.'>Import more students</a>"
                 except Exception as ex:
