@@ -6,7 +6,7 @@ from django.template import loader
 from django.urls import path
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import *
-from .views import CampaignStatisticsView
+from .views import CampaignStatisticsView, AssignmentStatisticsView
 from rest_framework.authtoken.models import Token
 
 
@@ -88,7 +88,7 @@ class CustomAdminSite(admin.AdminSite):
         urls = super().get_urls()
         custom_urls = [
             path('campaign_statistics/', CampaignStatisticsView.as_view()),
-            # path('assignment_statistics/', self.admin_view(self.assignment_statistics_view)),
+            path('assignment_statistics/', AssignmentStatisticsView.as_view()),
             path('import-users/', self.admin_view(self.import_user_view))
         ]
         return custom_urls + urls

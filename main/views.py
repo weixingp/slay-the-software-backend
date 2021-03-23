@@ -14,6 +14,8 @@ from rest_framework.generics import CreateAPIView, RetrieveAPIView, UpdateAPIVie
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
+
+from .helper import calculate_world_statistics
 from .models import *
 from django.db.models import Sum, Avg
 
@@ -471,59 +473,10 @@ class CampaignStatisticsView(APIView):
         """
         campaign_mode_stats = []  # array of worlds and their stats
         campaign_worlds = World.objects.filter(is_custom_world=False)
-        class_name = request.query_params.get("class_name")
+        class_name = request.query_params.get("class")
 
         for world in campaign_worlds:
-            sections = Section.objects.filter(world=world)
-            sections_stats = []
-            for section in sections:
-                # calculate total and avg points
-                levels = Level.objects.filter(section=section)
-                question_records = QuestionRecord.objects.filter(level__in=levels)
-
-                # retrieve stats of students in given class, if any
-                if class_name:
-                    class_group = Class.objects.get(class_name=class_name)
-                    students = [student_profile.student for student_profile in
-                                StudentProfile.objects.filter(class_group=class_group)]
-                    question_records = question_records.filter(user__in=students)
-
-                if len(question_records) == 0:
-                    avg_points = 0
-                    total_points = 0
-                else:
-                    avg_points = round(question_records.aggregate(Avg('points_change'))["points_change__avg"], 2)
-                    total_points = question_records.aggregate(Sum('points_change'))["points_change__sum"]
-
-                # get stats for each question in the section
-                questions_stats = []
-                questions = Question.objects.filter(section=section)
-                for question in questions:
-                    question_record = QuestionRecord.objects.filter(question=question)
-
-                    # retrieve stats of students in given class, if any
-                    if class_name:
-                        class_group = Class.objects.get(class_name=class_name)
-                        students = [student_profile.student for student_profile in
-                                    StudentProfile.objects.filter(class_group=class_group)]
-                        question_record = question_record.filter(user__in=students)
-
-                    num_correct = len(question_record.filter(is_correct=True))
-                    num_incorrect = len(question_record.filter(is_correct=False))
-                    questions_stats.append({
-                        "question": question.question,
-                        "num_correct": num_correct,
-                        "num_incorrect": num_incorrect,
-                    })
-
-                sections_stats.append({
-                    "sub_topic_name": section.sub_topic_name,
-                    "avg_points": avg_points,
-                    "total_points": total_points,
-                    "questions": questions_stats
-                })
-
-            campaign_mode_stats.append({"world_name": world.world_name, "sections": sections_stats})
+            campaign_mode_stats.append(calculate_world_statistics(world, class_name))
 
         context = {"campaign_mode_stats": campaign_mode_stats}
         if class_name:
@@ -535,51 +488,55 @@ class CampaignStatisticsView(APIView):
         classes = ["All"]
         for class_group in Class.objects.all():
             classes.append(class_group.class_name)
-        # classes.remove(context["group"])  # current class name will be rendered separately
         context["classes"] = classes
 
         return render(request, "main/campaign_statistics.html", context)
 
 
-# class EditAnswerView(APIView):
-#     permission_classes = [IsOwnerOrReadOnly]
-#
-#     def get_answer(self, id):
-#         try:
-#             return Answer.objects.get(id=id)
-#         except Answer.DoesNotExist:
-#             return Response(status=status.HTTP_404_NOT_FOUND)
-#
-#     def get(self, request, id):
-#         answer = self.get_answer(id)
-#         if isinstance(answer, Response):
-#             return answer
-#
-#         serializer = AnswerSerializer(answer)
-#         return Response(serializer.data)
-#
-#     def put(self, request, id):
-#         answer = self.get_answer(id)
-#         if isinstance(answer, Response):
-#             return answer
-#
-#         serializer = AnswerSerializer(answer, data=request.data, partial=True)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class AssignmentStatisticsView(APIView):
+    def get(self, request):
+        access_code = request.query_params.get("access_code")
+        class_name = request.query_params.get("class")
 
-# KIV if need
-# class AssignmentView(APIView):
-#
-#     def get(self, request):
-#         assignments = Assignment.objects.all()
-#         serializer = AssignmentSerializer(assignments)
-#         return Response(serializer.data)
-#
-#     def post(self, request):
-#         serializer = CreateQuestionSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save(created_by=request.user)
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+        # get list of assignment custom worlds and their access codes to let users choose
+        # which statistics to view
+        custom_worlds = [{"custom_world_name": "Choose an Assignment World", "access_code": ""}]
+        teachers = User.objects.filter(is_staff=True, is_superuser=False)
+        for custom_world in CustomWorld.objects.filter(created_by__in=teachers):
+            custom_worlds.append({
+                "custom_world_name": custom_world.world_name,
+                "access_code": custom_world.access_code
+            })
+        context = {"custom_worlds": custom_worlds}
+
+        # calculate stats for assignment custom world
+        if access_code:
+            custom_world = CustomWorld.objects.get(access_code=access_code)
+            context["custom_world_stats"] = calculate_world_statistics(custom_world, class_name)
+
+            # set current_assignment for displaying in dropdown menu
+            context["current_custom_world"] = {
+                "custom_world_name": custom_world.world_name,
+                "access_code": access_code
+            }
+
+            # get list of classes that were assigned this assignment custom world
+            classes = ["All"]
+            assignments_with_this_custom_world = Assignment.objects.filter(custom_world=custom_world)
+            for assignment in assignments_with_this_custom_world:
+                classes.append(assignment.class_group.class_name)
+            context["classes"] = classes
+
+            # set current_class for displaying in dropdown menu
+            if class_name:
+                context["current_class"] = class_name
+            else:
+                context["current_class"] = "All"
+
+        else:
+            context["current_custom_world"] = {
+                "custom_world_name": "All",
+                "access_code": ""
+            }
+
+        return render(request, "main/assignment_statistics.html", context)
