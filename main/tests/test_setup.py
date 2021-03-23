@@ -12,11 +12,6 @@ class TestSetUp(APITestCase):
         user = User.objects.create_user(username="tester2", password="tester123")
         self.client.force_authenticate(user=self.random_user1)
 
-        test_class = Class.objects.create(
-            teacher=user,
-            class_name="Test Class"
-        )
-
         world = World.objects.create(
             world_name="worldnametest1",
             topic="topictest1",
@@ -67,5 +62,3 @@ class TestSetUp(APITestCase):
             difficulty="1",
             created_by_id="2"
         )
-
-        StudentProfile.objects.create(student=self.random_user1, year_of_study=2, class_group=test_class)
