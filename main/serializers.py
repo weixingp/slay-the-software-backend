@@ -246,21 +246,6 @@ class CustomWorldSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-# KIV if need
-# class AssignmentSerializer(serializers.ModelSerializer):
-#     custom_world = CustomWorldSerializer()
-#
-#     class Meta:
-#         model = Assignment
-#         fields = '__all__'
-#
-#     def create(self, validated_data):
-#         custom_world_data = validated_data.pop("custom_world")
-#         custom_world = CustomWorld.objects.create(**custom_world_data)
-#         assignment = Assignment.objects.create(custom_world=custom_world, **validated_data)
-#         return assignment
-
-
 class WorldValidateSerializer(serializers.Serializer):
     world_id = serializers.CharField(required=False, allow_blank=True)
 

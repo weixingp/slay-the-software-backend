@@ -4,28 +4,63 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Campaign Statistics</title>
+    <title>Assignment Statistics</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
 </head>
 <body>
     <div class="container">
         <div class="row">
             <div class="col text-center">
-                <h1>Campaign Statistics</h1>
+                <h1>Assignment Statistics</h1>
             </div>
         </div>
-        <div class="row justify-content-center" style="padding-top: 20px">
-            <div class="col-1">
+        <div class="row justify-content-center" style="padding-top: 20px" id="assignment-row">
+            <div class="col-3">
+                <h4 class="text-end"><strong>Assignment World:</strong></h4>
+            </div>
+            <div class="col-3">
+                <select
+                        class="form-select"
+                        aria-label="select assignment"
+                        id="select-assignment"
+                        onchange="changeAssignment(this)"
+                >
+                    {% for custom_world in custom_worlds %}
+                        {% if custom_world.custom_world_name == current_custom_world.custom_world_name %}
+                        <option value={{ custom_world.access_code }} selected>
+                            {% if custom_world.access_code == "" %}
+                                {{ custom_world.custom_world_name }}
+                            {% else %}
+                                {{ custom_world.custom_world_name }} ({{ custom_world.access_code }})
+                            {% endif %}
+                        </option>
+                        {% else %}
+                        <option value={{ custom_world.access_code }}>
+                            {% if custom_world.access_code == "" %}
+                                {{ custom_world.custom_world_name }}
+                            {% else %}
+                                {{ custom_world.custom_world_name }} ({{ custom_world.access_code }})
+                            {% endif %}
+                        </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        {% if classes %}
+        <div class="row justify-content-center" style="padding-top: 20px" id="classes-row">
+            <div class="col-3">
                 <h4 class="text-end"><strong>Class:</strong></h4>
             </div>
-            <div class="col-2">
+            <div class="col-3">
                 <select
                         class="form-select"
                         aria-label="select class"
                         id="select-class"
-                        onchange="changeClass(this)">
+                        onchange="changeAssignmentClass(this)">
                     {% for class in classes %}
-                        {% if class == group %}
+                        {% if class == current_class %}
                         <option value={{ class }} selected>{{ class }}</option>
                         {% else %}
                         <option value={{ class }}>{{ class }}</option>
@@ -34,16 +69,16 @@
                 </select>
             </div>
         </div>
+        {% endif %}
         <br><br>
 
-        {% for world in campaign_mode_stats %}
         <div class="row" id="world">
             <div class="row" id="world_name">
                 <div class="col" style="border-bottom: 1px solid gray;">
-                    <h2 class="text-primary">{{ world.world_name }}</h2>
+                    <h2 class="text-primary">{{ custom_world_stats.world_name }}</h2>
                 </div>
             </div>
-            {% for section in world.sections %}
+            {% for section in custom_world_stats.sections %}
             <div class="row" id="section">
                 <div class="col">
                     <h3 class="text-secondary">{{ section.sub_topic_name }}</h3>
@@ -80,7 +115,6 @@
             </div>
             {% endfor %}
         </div>
-        {% endfor %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js" integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0" crossorigin="anonymous"></script>

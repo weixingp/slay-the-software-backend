@@ -33,13 +33,6 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 
-# Function based view
-function_view = [
-    path('api/hello-world', views.hello_world),
-    path('api/hello-world-2', views.HelloWorld2.as_view()),
-]
-urlpatterns += function_view
-
 # API account url
 api_account = [
     path('api/account/login/', views.LoginView.as_view()),
