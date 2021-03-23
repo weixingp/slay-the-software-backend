@@ -1,15 +1,19 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.db.models import Sum, Avg
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.template import loader
 from django.urls import path
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+
+from .forms import UploadCSVForm
 from .models import *
 from rest_framework.authtoken.models import Token
 
 
 # Register your models here.
+from .utils import import_users
+
 
 @admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):
@@ -79,6 +83,18 @@ class CustomAdminSite(admin.AdminSite):
                         "view_only": True,
                     },
                 ],
+            },
+            {
+                "name": "Tools",
+                "app_label": "main",
+                "models": [
+                    {
+                        "name": "Import users",
+                        "object_name": None,
+                        "admin_url": "/admin/import-users/",
+                        "view_only": True,
+                    },
+                ]
             }
         ]
         return app_list
@@ -93,15 +109,65 @@ class CustomAdminSite(admin.AdminSite):
         ]
         return custom_urls + urls
 
-    def import_user_view(self, request, class_name=None):
+    def import_user_view(self, request):
+        """
+        Import student from CSV page for teachers and admins
+        """
         template = loader.get_template('admin/import-users.html')
 
-        context = {
+        if request.method == "GET":
+            # Viewing the page
+            class_groups = Class.objects.all()
+            context = dict(
+                # Include common variables for rendering the admin template.
+                self.each_context(request),
+                # Anything else you want in the context...
+                title="Import users",
+                proccessed=False,
+                class_groups=class_groups,
+            )
 
-        }
+            response = HttpResponse(template.render(context, request))
+            return response
 
-        response = HttpResponse(template.render(context, request))
-        return response
+        elif request.method == "POST":
+            # Process upload
+            form = UploadCSVForm(data=request.POST, files=request.FILES)
+            if form.is_valid():
+                class_group = form.cleaned_data['class_group']
+                csv = request.FILES['csv_file']
+                try:
+                    total, failed_rows = import_users(csv, class_group)
+                    message = f"{total - len(failed_rows)} students imported successfully."
+                    if failed_rows:
+                        message += f" {2} students failed to import. Please check row: <br /> {failed_rows}"
+
+                    message += "<br /><br /> <a href='.'>Import more students</a>"
+                except Exception as ex:
+                    messages.add_message(request, messages.ERROR, f'Unable to process CSV file. Error: {repr(ex)}')
+                    message = "Something went wrong."
+            else:
+                message = "Invalid class group or CSV file, please <a href='.'>try again.</a>"
+
+            context = dict(
+                # Include common variables for rendering the admin template.
+                self.each_context(request),
+                # Anything else you want in the context...
+                title="Import users",
+                processed=True,
+                message=message,
+            )
+
+            response = HttpResponse(template.render(context, request))
+            return response
+
+        else:
+            return redirect("/admin")
+
+    def import_user_action_view(self, request):
+        """
+        Json action view to accept csv file.
+        """
 
     def campaign_statistics_view(self, request, class_name=None):
         """
