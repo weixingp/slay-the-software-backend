@@ -5,10 +5,13 @@ from main.models import Question, Section, World, Answer, StudentProfile, Class
 
 class TestSetUp(APITestCase):
     def setUp(self):
+        """
+        Dummy data to test custom questions
+        1x User, 1x World, 1x Section, 1x Question, 4x Answers
+        """
         self.question_url = '/api/questions/'
-
         self.random_user1 = User.objects.create_user(username="tester1", password="tester123")
-        user = User.objects.create_user(username="tester2", password="tester123")
+        # user = User.objects.create_user(username="tester2", password="tester123")
         self.client.force_authenticate(user=self.random_user1)
 
         world = World.objects.create(

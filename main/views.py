@@ -304,7 +304,13 @@ class CheckAnswerView(APIView):
 
 
 class CustomQuestionView(APIView):
+    """
+    API for creating custom questions
+    """
     def get(self, request):
+        """
+        Gets custom questions the user has created
+        """
         questions = Question.objects.filter(created_by=request.user)
         world_id = request.query_params.get("world_id")
         if world_id:
@@ -317,6 +323,9 @@ class CustomQuestionView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        """
+        Allow user to create custom questions
+        """
         serializer = CreateQuestionSerializer(data=request.data)
         if serializer.is_valid():
             section = Section.objects.get(id=request.data['section'])
@@ -331,15 +340,24 @@ class CustomQuestionView(APIView):
 
 
 class CustomQuestionListView(APIView):
+    """
+    API to get specific user created question
+    """
     permission_classes = [IsOwnerOrReadOnly]
 
     def get_object(self, pk):
+        """
+        Check if question with specific ID exists
+        """
         try:
             return Question.objects.get(pk=pk)
         except Question.DoesNotExist:
             raise NotFound(detail="Invalid Question ID specified")
 
     def get(self, request, pk):
+        """
+        Get question with specific ID
+        """
         question = self.get_object(pk)
         serializer = CreateQuestionSerializer(question)
         return Response(serializer.data)
@@ -351,6 +369,9 @@ class CustomQuestionListView(APIView):
         #     raise PermissionDenied(detail="You do not own this question")
 
     def put(self, request, pk):
+        """
+        Edit question with specific ID
+        """
         question = self.get_object(pk)
         serializer = EditQuestionSerializer(question, data=request.data, partial=True)
         if serializer.is_valid():
@@ -359,6 +380,9 @@ class CustomQuestionListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
+        """
+        Delete question with specific ID
+        """
         question = self.get_object(pk)
         question.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
