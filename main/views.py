@@ -436,11 +436,17 @@ class GetPositionView(APIView):
         gm = GameManager(user)
         position_serializer = WorldValidateSerializer(data=request.GET)
         position_serializer.is_valid(raise_exception=True)
-        position = gm.get_user_position_in_world(position_serializer.validated_data['world'])
+
+        position, has_completed_world = gm.get_user_position_in_world(
+            position_serializer.validated_data['world'],
+            check_completed=True,
+        )
+
         res = {
             "world_id": position.section.world.id,
             "section_id": position.section.id,
-            "level_id": position.id
+            "level_id": position.id,
+            "has_completed": has_completed_world,
         }
         return Response(res)
 
