@@ -429,19 +429,27 @@ class CustomWorldView(APIView):
 class CustomWorldDetails(APIView):
     permission_classes = [IsOwnerOrReadOnly]
 
-    def get_object(self, access_code):
+    def get_custom_world(self, access_code, custom_world_type=None):
         try:
-            return CustomWorld.objects.get(access_code=access_code)
+            custom_world = CustomWorld.objects.get(access_code=access_code)
+            if custom_world_type == "assignment" and not Assignment.objects.filter(custom_world=custom_world).exists():
+                raise ParseError(detail="Custom World exists but not as part of an Assignment")
+            elif custom_world_type == "challenge" and Assignment.objects.filter(custom_world=custom_world).exists():
+                raise ParseError(detail="Custom World exists but not as part of Challenge Mode")
+            else:
+                return CustomWorld.objects.get(access_code=access_code)
         except CustomWorld.DoesNotExist:
-            return NotFound(detail="Invalid access code specified")
+            raise NotFound(detail="Invalid access code specified")
 
     def get(self, request, access_code):
-        custom_world = self.get_object(access_code)
+        custom_world_type = request.query_params.get("type")
+        custom_world = self.get_custom_world(access_code, custom_world_type)
         serializer = CustomWorldSerializer(custom_world)
         return Response(serializer.data)
 
     def put(self, request, access_code):
-        custom_world = self.get_object(access_code)
+        custom_world_type = request.query_params.get("type")
+        custom_world = self.get_custom_world(access_code, custom_world_type)
         serializer = CustomWorldSerializer(custom_world, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -449,7 +457,8 @@ class CustomWorldDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, access_code):
-        custom_world = self.get_object(access_code)
+        custom_world_type = request.query_params.get("type")
+        custom_world = self.get_custom_world(access_code, custom_world_type)
         custom_world.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
