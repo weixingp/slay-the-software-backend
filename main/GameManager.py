@@ -77,7 +77,7 @@ class GameManager:
         elif not a and b:
             # User has finished the main worlds / custom world
             position = progress.order_by('-id')[0].level  # Last position
-            if position.is_completed:
+            if progress.order_by('-id')[0].is_completed:
                 has_completed_world = True
         else:
             position = a[0].level
