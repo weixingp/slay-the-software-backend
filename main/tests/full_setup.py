@@ -6,10 +6,26 @@ from main.models import Class, StudentProfile, World, Level, Section, Question, 
 
 class FullSetUp(APITestCase):
     def setUp(self):
+        """
+        This dummy data includes:
+        - 3 campaign worlds (id 1 to 3)
+         * Each world contains 3 sections (id 1 to 9)
+         * Each section contains 3 levels (id 1 to 27)
+         * Last level of a world is a final boss level (id 9, 18, 27)
+
+        - 1 user with username "test" and password "test123"
+        - 1 teacher with username "teacher" and password "teacher123"
+        - 1 Class "Test Class" with id 1
+        """
         self.__create_classes()
         self.__create_accounts()
         self.client.force_authenticate(user=self.user)
         self.__create_campaign_mode()
+
+        # Make sure these are updated when dummy data is updated
+        self.total_worlds = 3
+        self.total_sections = 9
+        self.total_levels = 27
 
     def __create_accounts(self):
         self.username = "test"
@@ -26,6 +42,7 @@ class FullSetUp(APITestCase):
             teacher=self.teacher,
             class_name="Test Class"
         )
+
     def __create_campaign_mode(self):
         """
         Creates 3 Worlds for Campaign Mode.

@@ -51,7 +51,7 @@ class GameManager:
 
         return level
 
-    def get_user_position_in_world(self, world=None):
+    def get_user_position_in_world(self, world=None, check_completed=False):
         if not world or not world.is_custom_world:
             # Progress in main world
             progress = UserLevelProgressRecord.objects.filter(
@@ -65,21 +65,26 @@ class GameManager:
                 level__section__world=world
             )
 
-        # Instantiate the user position to the first level
         a = progress.filter(is_completed=False)
 
         b = progress.filter(is_completed=True)
 
+        has_completed_world = False
         if not progress:
             # User doesn't have any record at all
+            # Instantiate the user position to the first level
             position = self.__instantiate_position(world)
         elif not a and b:
             # User has finished the main worlds / custom world
             position = progress.order_by('-id')[0].level  # Last position
+            has_completed_world = True
         else:
             position = a[0].level
 
-        return position
+        if check_completed:
+            return position, has_completed_world
+        else:
+            return position
 
     def get_user_points_by_world(self, world):
         if not world:
@@ -185,7 +190,7 @@ class GameManager:
 
         return record
 
-    def unlock_level(self, world=None):
+    def __unlock_level(self, world=None):
         position = self.get_user_position_in_world(world)
         levels = Level.objects.filter(id__gt=position.id, section=position.section).order_by('id')
         if not levels:
@@ -245,7 +250,7 @@ class GameManager:
         question_record.is_correct = is_correct
         question_record.save()
 
-    def __complete_level(self, level):
+    def complete_level(self, level):
         """
         Completes the current level and unlock the next level if any.
         :param level: the level object
@@ -260,7 +265,8 @@ class GameManager:
         progress.save()
 
         # Unlock the next level
-        self.unlock_level(level.section.world)
+        return self.__unlock_level(level.section.world)
+
 
     def answer_questions(self, question_answer_set):
 
@@ -281,7 +287,7 @@ class GameManager:
             qn_index = self.__get_question_index(qr.level)
             if qn_index == self.normal_level_qn - 1:
                 # Unlock the next level
-                self.__complete_level(qr.level)
+                self.complete_level(qr.level)
 
             res = [{
                 "record_id": qr.id,
@@ -330,7 +336,7 @@ class GameManager:
             # Must answer at least 5 questions correctly.
             if correct_counter >= 5:
                 # Unlock the next level
-                self.__complete_level(level)
+                self.complete_level(level)
             return res
 
     def __check_normal_level_answer(self, question_record, answer):
