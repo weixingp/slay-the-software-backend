@@ -52,6 +52,7 @@ class QuestionAdmin(admin.ModelAdmin):
 
 
 class CustomWorldAdmin(admin.ModelAdmin):
+    exclude = ['index', ]
     list_display = ('created_by', 'access_code', 'is_active',)
 
 class SectionAdmin(admin.ModelAdmin):

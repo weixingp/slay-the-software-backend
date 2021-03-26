@@ -55,7 +55,7 @@ class Command(BaseCommand):
         # create teacher group and set permissions
         teacher_group = Group.objects.create(name="Teachers")
         permission_verbs = ["add", "change", "delete", "view"]
-        required_models = ["user", "question", "customworld", "assignment"]
+        required_models = ["user", "question", "customworld", "assignment", "answer"]
         for model in required_models:
             for verb in permission_verbs:
                 teacher_group.permissions.add(
