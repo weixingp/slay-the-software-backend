@@ -7,6 +7,7 @@ from django.urls import path
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from .forms import UploadCSVForm
+from .helper import calculate_world_statistics
 from .models import *
 from .views import CampaignStatisticsView, AssignmentStatisticsView
 from rest_framework.authtoken.models import Token
@@ -103,11 +104,91 @@ class CustomAdminSite(admin.AdminSite):
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
-            path('campaign_statistics/', CampaignStatisticsView.as_view()),
-            path('assignment_statistics/', AssignmentStatisticsView.as_view()),
+            path('campaign_statistics/', self.admin_view(self.campaign_statistics_view)),
+            path('assignment_statistics/', self.admin_view(self.assignment_statistics_view)),
             path('import-users/', self.admin_view(self.import_user_view))
         ]
         return custom_urls + urls
+
+    def campaign_statistics_view(self, request):
+        """
+        Retrieves the following statistics:
+        - Per World in Campaign Mode, retrieve the average score (gained per Question in the Section) and total score per Section
+        - Per Section, display each Question and the number of times it was answered correctly and incorrectly
+        """
+        campaign_mode_stats = []  # array of worlds and their stats
+        campaign_worlds = World.objects.filter(is_custom_world=False)
+        class_name = request.GET.get("class")
+
+        for world in campaign_worlds:
+            campaign_mode_stats.append(calculate_world_statistics(world, class_name))
+
+        context = {"campaign_mode_stats": campaign_mode_stats}
+        if class_name:
+            context["group"] = class_name
+        else:
+            context["group"] = "All"
+
+        # create classes array for dropdown menu
+        classes = ["All"]
+        for class_group in Class.objects.all():
+            classes.append(class_group.class_name)
+        context["classes"] = classes
+
+        return render(request, "main/campaign_statistics.html", context)
+
+    def assignment_statistics_view(self, request):
+        """
+        Retrieves the following statistics:
+        - For an Assignment Custom World, retrieve the average score (gained per Question in the Section), total score,
+        and for each Question, the number of times it was answered correctly and incorrectly
+        - If a Class name was specified, return the above statistics but only specific to that Class
+        """
+        access_code = request.GET.get("access_code")
+        class_name = request.GET.get("class")
+
+        # get list of assignment custom worlds and their access codes to let users choose
+        # which statistics to view
+        custom_worlds = [{"custom_world_name": "Choose an Assignment World", "access_code": ""}]
+        teachers = User.objects.filter(is_staff=True, is_superuser=False)
+        for custom_world in CustomWorld.objects.filter(created_by__in=teachers):
+            custom_worlds.append({
+                "custom_world_name": custom_world.world_name,
+                "access_code": custom_world.access_code
+            })
+        context = {"custom_worlds": custom_worlds}
+
+        # calculate stats for assignment custom world
+        if access_code:
+            custom_world = CustomWorld.objects.get(access_code=access_code)
+            context["custom_world_stats"] = calculate_world_statistics(custom_world, class_name)
+
+            # set current_assignment for displaying in dropdown menu
+            context["current_custom_world"] = {
+                "custom_world_name": custom_world.world_name,
+                "access_code": access_code
+            }
+
+            # get list of classes that were assigned this assignment custom world
+            classes = ["All"]
+            assignments_with_this_custom_world = Assignment.objects.filter(custom_world=custom_world)
+            for assignment in assignments_with_this_custom_world:
+                classes.append(assignment.class_group.class_name)
+            context["classes"] = classes
+
+            # set current_class for displaying in dropdown menu
+            if class_name:
+                context["current_class"] = class_name
+            else:
+                context["current_class"] = "All"
+
+        else:
+            context["current_custom_world"] = {
+                "custom_world_name": "All",
+                "access_code": ""
+            }
+
+        return render(request, "main/assignment_statistics.html", context)
 
     def import_user_view(self, request):
         """
