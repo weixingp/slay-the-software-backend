@@ -50,6 +50,11 @@ class QuestionAdmin(admin.ModelAdmin):
     exclude = ['created_by', ]
     inlines = [AnswerAdmin, ]
 
+    def get_changeform_initial_data(self, request):
+        teachers = User.objects.filter(is_staff=True, is_superuser=False)
+        if request.user in teachers:
+            return {'difficulty': '1'}
+
 
 class CustomWorldAdmin(admin.ModelAdmin):
     exclude = ['index', ]
