@@ -62,3 +62,66 @@ class TestMisc(FullSetUp):
         }
 
         self.assertEqual(res.data, data)
+
+    def test_get_position_last_level_uncompleted(self):
+        """
+        API: /api/position/
+        Test get position when user reached the last level and level
+        uncompleted.
+        """
+
+        level = Level.objects.get(id=self.total_levels)
+        UserLevelProgressRecord.objects.create(
+            user=self.user,
+            level=level
+        )
+
+        # gm = GameManager(self.user)
+        # level = gm.get_user_position_in_world()  # Init the first level
+        # rand_lvl = randrange(0, self.total_levels)  # start from level 2
+        # for i in range(0, rand_lvl):
+        #     level = gm.complete_level(level)
+
+        res = self.client.get("/api/position/")
+
+        # Status check
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        # Data check
+        data = {
+            'world_id': level.section.world_id,
+            'section_id': level.section.id,
+            'level_id': level.id,
+            'has_completed': False
+        }
+
+        self.assertEqual(res.data, data)
+
+    def test_get_position_last_level_completed(self):
+        """
+        API: /api/position/
+        Test get position when user reached the last level and level
+        uncompleted.
+        """
+
+        level = Level.objects.get(id=self.total_levels)
+        UserLevelProgressRecord.objects.create(
+            user=self.user,
+            level=level,
+            is_completed=True,
+        )
+
+        res = self.client.get("/api/position/")
+
+        # Status check
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        # Data check
+        data = {
+            'world_id': level.section.world_id,
+            'section_id': level.section.id,
+            'level_id': level.id,
+            'has_completed': True
+        }
+
+        self.assertEqual(res.data, data)
