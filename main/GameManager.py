@@ -365,10 +365,6 @@ class GameManager:
 
     def __get_single_question_set(self, position):
 
-
-        # if qn_index > self.normal_level_qn - 1:
-        #     raise PermissionDenied(detail="You are not allowed to get more questions of this level.")
-
         section = position.section
 
         difficulty = self.get_qn_difficulty_by_world(section.world)
@@ -467,10 +463,23 @@ class GameManager:
                 "question": question,
                 "answers": answers,
                 "record_id": item.id,
-                "index": None
+                "index": None,
             }
             res.append(temp)
         return res
+
+    def __get_question_session_stats(self, level):
+        records = QuestionRecord.objects.filter(
+            user=self.user,
+            level=level
+        )
+        total_score = 0
+        correct_counter = 0
+        for record in records:
+            total_score += record.points_change
+            correct_counter += 1 if record.is_correct else 0
+
+        return [total_score, correct_counter]
 
     def get_questions(self, world):
         position = self.get_user_position_in_world(world)
@@ -479,4 +488,6 @@ class GameManager:
         else:
             question_list = self.__get_single_question_set(position)
 
-        return question_list
+        session_stats = self.__get_question_session_stats(position)
+
+        return question_list, session_stats

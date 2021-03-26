@@ -255,9 +255,11 @@ class QuestionView(APIView):
         serializer = WorldValidateSerializer(data=request.GET)
         serializer.is_valid(raise_exception=True)
 
-        question_list = gm.get_questions(serializer.validated_data['world'])
+        question_list, session_stats = gm.get_questions(serializer.validated_data['world'])
         res = {
             "questions": [],
+            "score": session_stats[0],
+            "correct_counter": session_stats[1]
         }
         for question in question_list:
             question_serializer = QuestionSerializer(question['question'])
