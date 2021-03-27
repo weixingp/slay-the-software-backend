@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +6,8 @@
     {% if assignments %}
         <title>Slay the Software Assignment | Topic: {{ world.topic }} | Access code: {{ world.access_code }}</title>
         <meta name="description" content="New Slay the Software assignment. Please complete it before the deadline."/>
+        <meta property="og:description" content="New Slay the Software assignment. Please complete it before the deadline.">
+        <meta property="og:image" content="{% static "/img/cover-img.jpg" %}">
     {% else %}
         <title>Assignment not found!</title>
     {% endif %}
