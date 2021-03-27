@@ -424,7 +424,7 @@ class CustomWorldView(APIView):
 
             # create Level
             for i in range(4):
-                level_name = "Level %s" % (i + 1)
+                level_name = "Custom Level %s" % (i + 1)
                 Level.objects.create(section=section, level_name=level_name)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
