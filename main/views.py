@@ -424,7 +424,7 @@ class CustomWorldView(APIView):
 
             # create Level
             for i in range(4):
-                level_name = "Level %s" % (i + 1)
+                level_name = "Custom Level %s" % (i + 1)
                 Level.objects.create(section=section, level_name=level_name)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -448,6 +448,15 @@ class CustomWorldDetails(APIView):
     def get(self, request, access_code):
         custom_world_type = request.query_params.get("type")
         custom_world = self.get_custom_world(access_code, custom_world_type)
+
+        # if request is for assignment world, check if the assignment belongs to the user's class
+        if custom_world_type == "assignment":
+            # use id because only class ids can be extracted from a queryset
+            student_class_id = StudentProfile.objects.get(student=request.user).class_group.id
+            assignment_classes_ids = Assignment.objects.filter(custom_world=custom_world).values_list("class_group", flat=True)
+            if student_class_id not in assignment_classes_ids:
+                raise ParseError(detail="You do not have access to this Assignment")
+
         serializer = CustomWorldSerializer(custom_world)
         return Response(serializer.data)
 
