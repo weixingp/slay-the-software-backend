@@ -18,7 +18,8 @@
 </head>
 <body>
     <div class="container">
-        <div class="section mt-3">
+        {% if assignments %}
+            <div class="section mt-3">
             <div class="text-center">
                 <h1>Slay the Software Assignment</h1>
                 <h3>Code: <span class="text-danger">{{ world.access_code }}</span></h3>
@@ -39,6 +40,14 @@
                 {% endfor %}
             </div>
         </div>
+        {% else %}
+            <div class="section mt-3">
+                <div class="text-center">
+                    <h1>Assignment Not Found!</h1>
+                    <h3>Please double check your access code.</h3>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </body>
 </html>
