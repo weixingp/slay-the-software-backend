@@ -1,6 +1,34 @@
+from urllib import parse
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, User, Group
 from django.db import models
+from django.db.models import CharField
+from django.forms import forms
 from django.utils import timezone
+from django.utils.safestring import mark_safe
+
+from main.validators import validate_matric
+from django.utils.translation import ugettext_lazy as _
+
+
+class MatriculationField(CharField):
+    def __init__(self, *args, **kwargs):
+        super(MatriculationField, self).__init__(*args, **kwargs)
+
+    def clean(self, *args, **kwargs):
+        data = super(MatriculationField, self).clean(*args, **kwargs)
+
+        matric = data.upper().strip()
+
+        try:
+            check = validate_matric(matric)
+        except Exception:
+            raise forms.ValidationError(_('Wrong matric number format, please double check.'))
+
+        if not check:
+            raise forms.ValidationError(_('Invalid matric number, please double check.'))
+
+        return matric
 
 
 # Create your models here.
@@ -42,7 +70,8 @@ class Question(models.Model):
         choices=DIFFICULTY_CHOICES,
     )
 
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_questions", blank=True, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_questions", blank=True,
+                                   null=True)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
@@ -70,6 +99,7 @@ class CustomWorld(World):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="custom_worlds")
     access_code = models.CharField(max_length=6, unique=True)
     is_active = models.BooleanField(default=True)
+
     # date_created = models.DateTimeField(auto_now_add=True)
     # date_modified = models.DateTimeField(auto_now=True)
 
@@ -99,6 +129,26 @@ class Assignment(models.Model):
     # Object name for display in admin panel
     def __str__(self):
         return "%s|%s" % (self.custom_world, self.class_group)
+
+    def get_fb_share_btn(self):
+        base_url = "https://cz3003.kado.sg/share/?code="
+        share_url = base_url + self.custom_world.access_code
+        share_url_encoded = parse.quote(share_url)
+
+        html = """
+        <div
+        class="fb-share-button" 
+        data-href=" """ + share_url + """ " 
+        data-layout="button" data-size="large">
+            <a target="_blank" 
+            href="https://www.facebook.com/sharer/sharer.php?u=""" + share_url_encoded + """;src=sdkpreparse" 
+            class="fb-xfbml-parse-ignore">Share
+            </a>
+        </div>
+        """
+        return mark_safe(html)
+
+    get_fb_share_btn.short_description = 'Share to FB'
 
 
 class Level(models.Model):

@@ -2,7 +2,9 @@ import json
 
 from django.conf.global_settings import AUTHENTICATION_BACKENDS
 from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.http import HttpResponse
 from django.shortcuts import render
+from django.template import loader
 from pytz import unicode
 from rest_framework import viewsets, authentication, exceptions
 from django.contrib.auth.models import User, Group
@@ -568,3 +570,27 @@ class AssignmentStatisticsView(APIView):
             }
 
         return render(request, "main/assignment_statistics.html", context)
+
+
+def assignment_share_page(request):
+    template = loader.get_template('main/assignment_sharing.html')
+    code = request.GET.get("code")
+    assignments = None
+    world = None
+    if code:
+        try:
+            world = CustomWorld.objects.get(access_code=code)
+            assignments = Assignment.objects.filter(custom_world=world)
+        except ObjectDoesNotExist:
+            world = None
+            assignments = None
+    else:
+        pass
+
+    context = {
+        "assignments": assignments,
+        "world": world,
+    }
+
+    response = HttpResponse(template.render(context, request))
+    return response
