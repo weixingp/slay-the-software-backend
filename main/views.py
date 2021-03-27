@@ -448,6 +448,15 @@ class CustomWorldDetails(APIView):
     def get(self, request, access_code):
         custom_world_type = request.query_params.get("type")
         custom_world = self.get_custom_world(access_code, custom_world_type)
+
+        # if request is for assignment world, check if the assignment belongs to the user's class
+        if custom_world_type == "assignment":
+            # use id because only class ids can be extracted from a queryset
+            student_class_id = StudentProfile.objects.get(student=request.user).class_group.id
+            assignment_classes_ids = Assignment.objects.filter(custom_world=custom_world).values_list("class_group", flat=True)
+            if student_class_id not in assignment_classes_ids:
+                raise ParseError(detail="You do not have access to this Assignment")
+
         serializer = CustomWorldSerializer(custom_world)
         return Response(serializer.data)
 
