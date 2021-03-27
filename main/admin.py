@@ -50,6 +50,7 @@ class AssignmentAdmin(admin.ModelAdmin):
 
 class AnswerAdmin(admin.TabularInline):
     model = Answer
+    max_num = 4
 
 
 class QuestionAdmin(admin.ModelAdmin):
@@ -109,7 +110,7 @@ class CustomAdminSite(admin.AdminSite):
                 "app_label": "main",
                 "models": [
                     {
-                        "name": "Import users",
+                        "name": "Import Users",
                         "object_name": None,
                         "admin_url": "/admin/import-users/",
                         "view_only": True,
