@@ -135,14 +135,32 @@ class CustomAdminSite(admin.AdminSite):
         - Per World in Campaign Mode, retrieve the average score (gained per Question in the Section) and total score per Section
         - Per Section, display each Question and the number of times it was answered correctly and incorrectly
         """
-        campaign_mode_stats = []  # array of worlds and their stats
+        # campaign_mode_stats = []  # array of worlds and their stats
         campaign_worlds = World.objects.filter(is_custom_world=False)
+        world_name = request.GET.get("world")
         class_name = request.GET.get("class")
 
+        worlds = []
         for world in campaign_worlds:
-            campaign_mode_stats.append(calculate_world_statistics(world, class_name))
+            worlds.append(world.world_name)
 
-        context = {"campaign_mode_stats": campaign_mode_stats}
+        if not world_name or world_name == worlds[0]: # get first world
+            world = World.objects.get(world_name=worlds[0])
+            current_world = worlds[0]
+        elif world_name == worlds[1]:
+            world = World.objects.get(world_name=worlds[1])
+            current_world = worlds[1]
+        elif world_name == worlds[2]:
+            world = World.objects.get(world_name=worlds[2])
+            current_world = worlds[2]
+        else:
+            raise Exception("Error occurred when retrieving world")
+
+        # campaign_mode_stats.append(calculate_world_statistics(world, class_name))
+
+        context = {"campaign_mode_stats": calculate_world_statistics(world, class_name),
+                   "worlds": worlds,
+                   "current_world": current_world}
         if class_name:
             context["group"] = class_name
         else:

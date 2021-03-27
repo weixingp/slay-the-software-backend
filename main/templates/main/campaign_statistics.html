@@ -33,7 +33,25 @@
                 <h1>Campaign Statistics</h1>
             </div>
         </div>
-        <div class="row justify-content-center" style="padding-top: 20px">
+        <div class="row justify-content-center pt-4" id="worlds">
+            <div class="col-1">
+                <h4 class="text-end"><strong>World:</strong></h4>
+            </div>
+            <div class="col-2">
+                <select
+                        class="form-select"
+                        aria-label="select class"
+                        id="select-world"
+                        onchange="changeWorld(this)">
+                    {% for world in worlds %}
+                        {% if world == current_world %}
+                        <option value={{ world }} selected>{{ world }}</option>
+                        {% else %}
+                        <option value={{ world }}>{{ world }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
             <div class="col-1">
                 <h4 class="text-end"><strong>Class:</strong></h4>
             </div>
@@ -55,14 +73,13 @@
         </div>
         <br><br>
 
-        {% for world in campaign_mode_stats %}
         <div class="row" id="world">
             <div class="row" id="world_name">
                 <div class="col" style="border-bottom: 1px solid gray;">
-                    <h2 class="text-primary">{{ world.world_name }}</h2>
+                    <h2 class="text-primary">{{ campaign_mode_stats.world_name }}</h2>
                 </div>
             </div>
-            {% for section in world.sections %}
+            {% for section in campaign_mode_stats.sections %}
             <div class="row" id="section">
                 <div class="col">
                     <h3 class="text-secondary">{{ section.sub_topic_name }}</h3>
@@ -99,7 +116,6 @@
             </div>
             {% endfor %}
         </div>
-        {% endfor %}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js" integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0" crossorigin="anonymous"></script>
