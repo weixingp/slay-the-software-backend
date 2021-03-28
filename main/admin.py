@@ -91,6 +91,12 @@ class LevelAdmin(admin.ModelAdmin):
 
 
 class CustomAdminSite(admin.AdminSite):
+    site_title = 'Slay the Software Admin'
+    site_header = 'Slay the Software administration'
+
+    # Text to put at the top of the admin index page.
+    index_title = 'Slay the Software administration'
+
     def get_app_list(self, request):
         app_list = super().get_app_list(request)
         app_list += [
@@ -138,6 +144,7 @@ class CustomAdminSite(admin.AdminSite):
         return custom_urls + urls
 
     def campaign_statistics_view(self, request):
+
         """
         Retrieves the following statistics:
         - Per World in Campaign Mode, retrieve the average score (gained per Question in the Section) and total score per Section
@@ -289,11 +296,6 @@ class CustomAdminSite(admin.AdminSite):
 
         else:
             return redirect("/admin")
-
-    def import_user_action_view(self, request):
-        """
-        Json action view to accept csv file.
-        """
 
 
 custom_admin_site = CustomAdminSite()
