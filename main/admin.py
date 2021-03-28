@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.template import loader
 from django.urls import path
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin, Group, GroupAdmin
 from django.utils.safestring import mark_safe
 
 from .forms import UploadCSVForm
@@ -308,6 +308,7 @@ custom_admin_site.register(CustomWorld, CustomWorldAdmin)
 custom_admin_site.register(Section, SectionAdmin)
 custom_admin_site.register(World, WorldAdmin)
 custom_admin_site.register(Level, LevelAdmin)
+custom_admin_site.register(Group, GroupAdmin)
 # custom_admin_site.register(Answer, AnswerAdmin)
 # admin.site.register(Assignment, AssignmentAdmin)
 # admin.site.register(Question, QuestionAdmin)
