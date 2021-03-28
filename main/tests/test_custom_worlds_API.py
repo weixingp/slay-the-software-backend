@@ -18,6 +18,17 @@ class TestCustomWorldsAPI(APITestCase):
                                                        created_by=self.student)
         self.custom_world_url = "/api/worlds/custom/"
 
+    def test_can_GET_custom_worlds(self):
+        """
+        API: "api/worlds/custom/"
+        Method: POST
+        Expected result: Should receive two custom worlds
+        """
+        response = self.client.get(self.custom_world_url, format="json")
+        response_json = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response_json), 2)
+
     def test_can_POST_custom_world(self):
         """
         API: "/api/worlds/custom/"
@@ -38,17 +49,6 @@ class TestCustomWorldsAPI(APITestCase):
         self.assertEqual(len(response_json["sections"]), 1)  # should have 1 section
         self.assertEqual(len(response_json["sections"][0]["levels"]), 4) # should have 4 levels
         self.assertEqual(response_json["created_by"], self.student.id)
-
-    def test_can_GET_custom_worlds(self):
-        """
-        API: "api/worlds/custom/"
-        Method: POST
-        Expected result: Should receive two custom worlds
-        """
-        response = self.client.get(self.custom_world_url, format="json")
-        response_json = response.json()
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response_json), 2)
 
     def test_can_GET_specific_custom_world(self):
         """
