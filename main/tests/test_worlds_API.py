@@ -79,7 +79,7 @@ class TestWorldsAPI(APITestCase):
         Answer.objects.create(question=question, answer="Answer 3")
         Answer.objects.create(question=question, answer="Answer 4", is_correct=True)
 
-    def test_get_worlds(self):
+    def test_can_GET_worlds(self):
         """
         API: "api/worlds/"
         Method: GET
@@ -93,7 +93,7 @@ class TestWorldsAPI(APITestCase):
         self.assertEqual(response_json[1]["is_custom_world"], False)
         self.assertEqual(response_json[2]["is_custom_world"], False)
 
-    def test_get_specific_worlds(self):
+    def test_can_GET_specific_worlds(self):
         """
         API: "api/worlds/:id/
         Method: GET
