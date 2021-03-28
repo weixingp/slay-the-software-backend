@@ -35,6 +35,7 @@ class Command(BaseCommand):
         self.__simulate_assignment_playthroughs()
         self.__create_demo_challenge_mode()
         self.__create_demo_assignment()
+        self.__simulate_demo_steve()
 
     def __create_superusers(self):
         self.stdout.write("Creating superusers...")
@@ -92,7 +93,10 @@ class Command(BaseCommand):
             {"username": "jayden", "password": "jayden123", "first_name": "Jayden", "last_name": "Seah", "class": "BCG2"},
             {"username": "james", "password": "james123", "first_name": "James", "last_name": "Barnes", "class": "SSP1"},
             {"username": "sam", "password": "sam123", "first_name": "Sam", "last_name": "Wilson", "class": "BCG1"},
-            {"username": "bob", "password": "bob123", "first_name": "Bob", "last_name": "The Builder", "class": "BCG2"}
+            {"username": "bob", "password": "bob123", "first_name": "Bob", "last_name": "The Builder", "class": "BCG2"},
+            {"username": "bob2", "password": "bob123", "first_name": "Bob 2", "last_name": "The Builder", "class": "BCG2"},
+            {"username": "bob3", "password": "bob123", "first_name": "Bob 3", "last_name": "The Builder", "class": "BCG2"},
+            {"username": "steve", "password": "steve123", "first_name": "Steve", "last_name": "The Builder", "class": "SSP2"}
         ]
         for student in students:
             created_student = User.objects.create_user(username=student["username"], password=student["password"],
@@ -245,7 +249,9 @@ class Command(BaseCommand):
             # {"username": "jayden", "worlds_finished": 0, "current_section": None, "current_level": None, "completed_mode": False},
             {"username": "james", "worlds_finished": 2, "current_section": 3, "current_level": 2, "completed_mode": False},
             {"username": "sam", "worlds_finished": 3, "current_section": 3, "current_level": 3, "completed_mode": True},
-            {"username": "bob", "worlds_finished": 1, "current_section": 3, "current_level": 2, "completed_mode": False}
+            {"username": "bob", "worlds_finished": 1, "current_section": 3, "current_level": 1, "completed_mode": False},
+            {"username": "bob2", "worlds_finished": 1, "current_section": 3, "current_level": 1, "completed_mode": False},
+            {"username": "bob3", "worlds_finished": 1, "current_section": 3, "current_level": 1, "completed_mode": False}
         ]
 
         for student_record in student_records: # should be in order of creation, i.e. josh, shenrui, wanqian, tom, mary, jerry, ayden, jayden
@@ -274,7 +280,8 @@ class Command(BaseCommand):
 
         self.stdout.write("...finished simulating")
 
-    # for use in __simulate_students_campaign_mode and __simulate_assignment_playthroughs
+    # for use in __simulate_students_campaign_mode, __simulate_challenge_mode_playthroughs,
+    # and __simulate_assignment_playthroughs
     def __simulate_answering_questions(self, gm, position, world=None):
         self.stdout.write("\t...current Level: %s" % position.id)
         questions, session_stats = gm.get_questions(position.section.world)
@@ -526,3 +533,25 @@ class Command(BaseCommand):
                                   deadline=self.assignment_deadline)
 
         csv_file.close()
+
+    def __simulate_demo_steve(self):
+        """
+        Steve will finish 1 Level of the first World. For that level he will get 2 Easy Correct and 1 Easy Wrong
+        So he would be at 15 points, after which answering the next question correctly will grant him Medium difficulty
+        """
+        self.stdout.write("Simulating steve's progress...")
+        steve = User.objects.get(username="steve")
+
+        question = Question.objects.get(id=1)
+        QuestionRecord.objects.create(user=steve, question=question, level_id=1, is_correct=True, points_change=10,
+                                      reason="Correct")
+        question = Question.objects.get(id=2)
+        QuestionRecord.objects.create(user=steve, question=question, level_id=1, is_correct=True, points_change=10,
+                                      reason="Correct")
+        question = Question.objects.get(id=3)
+        QuestionRecord.objects.create(user=steve, question=question, level_id=1, is_correct=False, points_change=-5,
+                                      reason="Incorrect")
+
+        UserLevelProgressRecord.objects.create(user=steve, level_id=1, is_completed=True, completed_time=timezone.now())
+        UserLevelProgressRecord.objects.create(user=steve, level_id=2)
+        self.stdout.write("...finished simulating")
