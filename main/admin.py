@@ -66,6 +66,7 @@ class QuestionAdmin(admin.ModelAdmin):
     list_filter = ('section', 'difficulty', 'created_by',)
     exclude = ['created_by', ]
     inlines = [AnswerAdmin, ]
+    search_fields = ('question', 'section')
 
     def get_changeform_initial_data(self, request):
         teachers = User.objects.filter(is_staff=True, is_superuser=False)
