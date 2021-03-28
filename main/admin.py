@@ -36,6 +36,14 @@ class ProfileInline(admin.StackedInline):
 class UserAdmin(BaseUserAdmin):
     inlines = (ProfileInline,)
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        teacher_class = Class.objects.filter(teacher=request.user)
+        student_ids = StudentProfile.objects.filter(class_group__in=teacher_class).values_list("student_id", flat=True)
+        return qs.filter(id__in=student_ids)
+
 
 class AssignmentAdmin(admin.ModelAdmin):
     class Media:
@@ -72,6 +80,13 @@ class QuestionAdmin(admin.ModelAdmin):
         teachers = User.objects.filter(is_staff=True, is_superuser=False)
         if request.user in teachers:
             return {'difficulty': '1'}
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        superusers = User.objects.filter(is_superuser=True)
+        return qs.exclude(created_by__in=superusers)
 
 
 class CustomWorldAdmin(admin.ModelAdmin):
