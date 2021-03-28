@@ -44,7 +44,15 @@ class AssignmentAdmin(admin.ModelAdmin):
             '//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v10.0&appId=191536954212800&autoLogAppEvents=1',
         )
 
-    list_display = ('custom_world', 'class_group', 'name', 'deadline', 'date_modified', 'get_fb_share_btn')
+    list_display = (
+        'custom_world',
+        'class_group',
+        'name',
+        'deadline',
+        'date_modified',
+        'get_fb_share_btn',
+        'get_twitter_share_btn'
+    )
     list_filter = ('class_group',)
 
 

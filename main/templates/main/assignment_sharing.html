@@ -11,6 +11,10 @@
         <meta property="og:image:type" content="image/jpeg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="628" />
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Slay the Software Assignment | Topic: {{ world.topic }} | Access code: {{ world.access_code }}">
+        <meta name="twitter:description" content="New Slay the Software assignment. Please complete it before the deadline.">
+        <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static "/img/cover-img.jpg" %}">
     {% else %}
         <title>Assignment not found!</title>
     {% endif %}
