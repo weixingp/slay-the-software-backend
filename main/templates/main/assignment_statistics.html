@@ -122,9 +122,9 @@
                         <tbody>
                             {% for question in section.questions %}
                             <tr>
-                                <td>{{ question.question }}</td>
-                                <td><span class="text-success">{{ question.num_correct }}</span></td>
-                                <td><span class="text-danger">{{ question.num_incorrect }}</span></td>
+                                <td class="col-6">{{ question.question }}</td>
+                                <td class="col-3"><span class="text-success">{{ question.num_correct }}</span></td>
+                                <td class="col-3"><span class="text-danger">{{ question.num_incorrect }}</span></td>
                             </tr>
                             {% endfor %}
                         </tbody>

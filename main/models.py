@@ -107,6 +107,10 @@ class CustomWorld(World):
     def __str__(self):
         return "%s|%s" % (self.world_name, self.created_by)
 
+    class Meta:
+        verbose_name = 'Custom World'
+        verbose_name_plural = 'Custom Worlds'
+
 
 class Class(models.Model):
     teacher = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="classes")
