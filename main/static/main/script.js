@@ -3,7 +3,7 @@ function changeWorld(selectObject) {
     window.location.replace("/admin/campaign_statistics?world=" + world_name)
 }
 
-function changeClass(selectObject) {
+function changeWorldClass(selectObject) {
     const world_name = document.getElementById("select-world").value;
     const class_name = selectObject.value;
     if (class_name === "All") {
