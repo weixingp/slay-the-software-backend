@@ -1,18 +1,15 @@
 from urllib import parse
 
 from django.contrib import admin, messages
-from django.db.models import Sum, Avg
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.template import loader
 from django.urls import path
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin, Group, GroupAdmin
-from django.utils.safestring import mark_safe
 
 from .forms import UploadCSVForm
 from .helper import calculate_world_statistics
 from .models import *
-from .views import CampaignStatisticsView, AssignmentStatisticsView
 from rest_framework.authtoken.models import Token
 
 # Register your models here.
@@ -111,6 +108,10 @@ class CustomWorldAdmin(admin.ModelAdmin):
             for i in range(4):
                 level_name = "Assignment Level %s" % (i + 1)
                 Level.objects.create(section=section, level_name=level_name)
+        else:
+            section = Section.objects.get(world=obj)
+            section.sub_topic_name = obj.world_name
+            section.save()
 
 
 class SectionAdmin(admin.ModelAdmin):

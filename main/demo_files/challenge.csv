@@ -1,4 +1,4 @@
-Question,Answer1,Answer2,Answer3,Answer4,Correct
+﻿Question,Answer1,Answer2,Answer3,Answer4,Correct
 Which of the following is NOT a method for estimating a project duration,Use historical data,Use expert judgement,Use random guesses,Wideband delphi,3
 What is a critical path?,A sequence of activities that take the longest time to complete,A sequence of activities that take the shortest time to complete,The most important sequence of activities to perform,The core of all paths,1
 What is a non-critical path?,A sequence of activities that take the shortest time to complete,A sequence of activities that we can delay and still finish the project in the shortest time possible,A sequence of activities that take the longest time to complete,A sequence of activities that are not essential to the project but is still good to perform,2

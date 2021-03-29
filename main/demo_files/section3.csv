@@ -1,4 +1,4 @@
-Question,Answer1,Answer2,Answer3,Answer4,Correct,Difficulty
+ï»¿Question,Answer1,Answer2,Answer3,Answer4,Correct,Difficulty
 What does the M in MVC mean?,Model,Marvel,Mode,Minecraft,1,1
 What does the V in MVC mean?,Visual,View,Verifiable,Vormir,2,1
 What does the C in MVC mean?,Correct,Consistent,Clear,Controller,4,1
@@ -6,9 +6,9 @@ In which types of applications are MVC most used in?,Mobile Apps,Games,Websites,
 What is a design problem that MVC solves?,Loose coupling needed,Tight coupling needed,When we need to tightly link the data and its representation,When we only need a single representation for the data,1,1
 What does a Model contain?,Units,Processing and data,Fancy clothes,Algebra,2,2
 How does a View trigger an update in the Model?,Directly,Models update themselves regardless of any triggers,Through the Controller,Views cannot update the Model,3,2
-How does a View subscribe for changes to a Model?,Using Observer Pattern,Using Strategy Pattern,Using Façade Class,Using Factory Pattern,1,2
+How does a View subscribe for changes to a Model?,Using Observer Pattern,Using Strategy Pattern,Using FaÃ§ade Class,Using Factory Pattern,1,2
 What does a Controller do?,Controls the state of the application,Provides code to determine how the UI changes,Performs data processing,Gathers input from the users and updates the Model,4,2
-Which of the following design patterns is NOT used in MVC?,Strategy,Composite,Façade Pattern,Abstract Factory,3,2
+Which of the following design patterns is NOT used in MVC?,Strategy,Composite,FaÃ§ade Pattern,Abstract Factory,3,2
 Which of the following is NOT an advantage for using MVC?,Allows for simultaneous development,Promotes high cohesion,Promotes low coupling,Promotes low cohesion,4,3
 Which of the following is NOT an advantage for using MVC?,Allows for multiple views for a Model,Easy to learn,Allows for simultaneous development,Promotes high cohesion,2,3
 Which of the following is a disadvantage in using MVC?,Easy to learn,Hard to navigate code,Provides low coupling,Does not allow for simultaneous development,2,3

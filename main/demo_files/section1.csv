@@ -1,4 +1,4 @@
-Question,Answer1,Answer2,Answer3,Answer4,Correct,Difficulty
+﻿Question,Answer1,Answer2,Answer3,Answer4,Correct,Difficulty
 What does interface specification entail?,Arguments,Reuse,GUI,Button,1,1
 What can we reuse in object design?,Bottles,Existing libraries,Cans,Paper,2,1
 Why must we restructure in object design?,To meet design goals,Because my boss said so,Because I like writing code,We don't have to,1,2
