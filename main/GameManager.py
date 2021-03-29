@@ -304,7 +304,8 @@ class GameManager:
 
             unanswered_records = QuestionRecord.objects.filter(
                 user=self.user,
-                is_completed=False
+                is_completed=False,
+                level=temp_qr.level
             )
 
             if len(unanswered_records) != self.boss_level_qn:
