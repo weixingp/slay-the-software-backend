@@ -6,9 +6,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 from django.db.models import CharField
 from django.forms import forms
-from django.utils import timezone
 from django.utils.safestring import mark_safe
-
 from main.validators import validate_matric
 from django.utils.translation import ugettext_lazy as _
 
@@ -44,7 +42,7 @@ class World(models.Model):
 
     # Object name for display in admin panel
     def __str__(self):
-        return "%s|%s" % (self.world_name, self.topic)
+        return "%s: %s" % (self.world_name, self.topic)
 
 
 class Section(models.Model):
@@ -56,7 +54,7 @@ class Section(models.Model):
 
     # Object name for display in admin panel
     def __str__(self):
-        return "%s|%s" % (self.world_id, self.sub_topic_name)
+        return "%s (%s)" % (self.sub_topic_name, self.world.world_name)
 
 
 class Question(models.Model):
@@ -92,12 +90,14 @@ class Answer(models.Model):
     # Object name for display in admin panel
     def __str__(self):
         if self.is_correct:
-            return "Correct"
+            return "%s (%s)" % (self.answer, "Correct")
         else:
-            return "Incorrect"
+            return "%s (%s)" % (self.answer, "Incorrect")
+
 
 def generate_access_code():
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+
 
 class CustomWorld(World):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="custom_worlds")
@@ -109,7 +109,7 @@ class CustomWorld(World):
 
     # Object name for display in admin panel
     def __str__(self):
-        return "%s|%s" % (self.world_name, self.created_by)
+        return "%s (Owner: %s)" % (self.world_name, self.created_by)
 
     class Meta:
         verbose_name = 'Custom World'
@@ -136,7 +136,7 @@ class Assignment(models.Model):
 
     # Object name for display in admin panel
     def __str__(self):
-        return "%s|%s" % (self.custom_world, self.class_group)
+        return "%s (%s - %s)" % (self.name, self.custom_world.world_name, self.class_group)
 
     def get_twitter_share_btn(self):
         base_url = "https://cz3003.kado.sg/share/?code="
@@ -193,17 +193,7 @@ class Level(models.Model):
 
     # Object name for display in admin panel
     def __str__(self):
-        return "%s|%s" % (self.section_id, self.level_name)
-
-
-# class LevelPath(models.Model):
-#     from_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="levelpath_fromlevel_fk")
-#     to_level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="levelpath_tolevel_fk")
-#     date_created = models.DateTimeField(auto_now_add=True)
-#     date_modified = models.DateTimeField(auto_now=True)
-#
-#     def __str__(self):
-#         return "%s|%s" % (self.from_level, self.to_level)
+        return "%s (%s)" % (self.level_name, self.section.sub_topic_name)
 
 
 # Points system migrated to UserLevelProgressRecord
@@ -255,4 +245,4 @@ class StudentProfile(models.Model):
     has_reset_password = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.student.first_name + " " + self.student.last_name + "|" + self.class_group.class_name
+        return self.student.first_name + " " + self.student.last_name + " (" + self.class_group.class_name + ")"

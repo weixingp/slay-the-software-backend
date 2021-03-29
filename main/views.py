@@ -1,10 +1,9 @@
-import json
-
 from django.conf.global_settings import AUTHENTICATION_BACKENDS
 from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.template import loader
+from django.utils import timezone
 from pytz import unicode
 from rest_framework import viewsets, authentication, exceptions
 from django.contrib.auth.models import User, Group
