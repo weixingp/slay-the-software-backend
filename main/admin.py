@@ -68,6 +68,9 @@ class AnswerAdmin(admin.TabularInline):
     model = Answer
     max_num = 4
 
+    def get_extra(self, request, obj=None, **kwargs):
+        return 4
+
 
 class QuestionAdmin(admin.ModelAdmin):
     list_display = ('question', 'section', 'difficulty', 'created_by', 'date_created', 'date_modified',)
