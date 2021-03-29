@@ -6,7 +6,7 @@ from django.db.models import Sum
 from django.utils.timezone import now
 from rest_framework.exceptions import PermissionDenied, NotFound, ValidationError
 
-from main.models import UserLevelProgressRecord, UserWorldProgressRecord, World, Level, Section, Question, \
+from main.models import UserLevelProgressRecord, World, Level, Section, Question, \
     QuestionRecord, Answer
 
 
