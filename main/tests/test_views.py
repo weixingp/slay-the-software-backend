@@ -31,7 +31,7 @@ class TestViews(TestSetUp):
         response_json = response.json()
         # new custom question
         self.assertEqual(response_json["question"],"question1")
-        self.assertEqual(response_json["section"],"1|subtopicnametest1")
+        self.assertEqual(response_json["section"],"subtopicnametest1 (worldnametest1)")
         self.assertEqual(response_json["answers"][0]["answer"], "answer1")
         self.assertEqual(response_json["answers"][1]["answer"], "answer2")
         self.assertEqual(response_json["answers"][2]["answer"], "answer3")
