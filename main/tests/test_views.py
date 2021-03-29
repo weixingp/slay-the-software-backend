@@ -10,6 +10,8 @@ class TestViews(TestSetUp):
         """
         response = self.client.get(self.question_url, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_json = response.json()
+        self.assertEqual(len(response_json), 1)  # should have 1 question
 
     def test_postCustomQuestion_success(self):
         """
@@ -26,6 +28,14 @@ class TestViews(TestSetUp):
                 ]}
         response = self.client.post(self.question_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response_json = response.json()
+        # new custom question
+        self.assertEqual(response_json["question"],"question1")
+        self.assertEqual(response_json["section"],"1|subtopicnametest1")
+        self.assertEqual(response_json["answers"][0]["answer"], "answer1")
+        self.assertEqual(response_json["answers"][1]["answer"], "answer2")
+        self.assertEqual(response_json["answers"][2]["answer"], "answer3")
+        self.assertEqual(response_json["answers"][3]["answer"], "answer4")
 
     def test_postCustomQuestion_fail_is_correct(self):
         """
@@ -65,6 +75,8 @@ class TestViews(TestSetUp):
         """
         response = self.client.get("/api/questions/1/", format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_json = response.json()
+        self.assertEqual(response_json["id"], 1)  # get question id = 1
 
 #    def test_getSelectedCustomQuestion_fail_not_your_question(self):
 #        response = self.client.get("/api/questions/2/", format='json')
@@ -92,3 +104,7 @@ class TestViews(TestSetUp):
                                                  {"answer":"answer4", "is_correct":"True"}
                                              ]})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_json = response.json()
+        self.assertEqual(response_json["question"], "question99") #question name updated
+        self.assertEqual(response_json["answers"][0]["is_correct"], False) #answer1 is updated to False
+        self.assertEqual(response_json["answers"][3]["is_correct"], True) #answer4 is updated to True
