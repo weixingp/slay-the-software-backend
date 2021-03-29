@@ -1,3 +1,5 @@
+import random
+import string
 from urllib import parse
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, User, Group
@@ -94,10 +96,12 @@ class Answer(models.Model):
         else:
             return "Incorrect"
 
+def generate_access_code():
+    return "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 class CustomWorld(World):
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="custom_worlds")
-    access_code = models.CharField(max_length=6, unique=True)
+    access_code = models.CharField(max_length=6, unique=True, default=generate_access_code)
     is_active = models.BooleanField(default=True)
 
     # date_created = models.DateTimeField(auto_now_add=True)

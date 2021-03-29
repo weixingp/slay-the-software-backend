@@ -93,8 +93,20 @@ class QuestionAdmin(admin.ModelAdmin):
 
 
 class CustomWorldAdmin(admin.ModelAdmin):
-    exclude = ['index', ]
-    list_display = ('created_by', 'access_code', 'is_active',)
+    exclude = ['index',]
+    readonly_fields = ['access_code']
+    list_display = ('world_name', 'created_by', 'access_code', 'is_active',)
+
+    def get_changeform_initial_data(self, request):
+        return {'is_custom_world': True, 'created_by': request.user}
+
+    def save_model(self, request, obj, form, change):
+        obj.save()
+        if not Section.objects.filter(world=obj).exists():
+            section = Section.objects.create(world=obj, sub_topic_name=obj.world_name)
+            for i in range(4):
+                level_name = "Assignment Level %s" % (i + 1)
+                Level.objects.create(section=section, level_name=level_name)
 
 
 class SectionAdmin(admin.ModelAdmin):
@@ -103,6 +115,7 @@ class SectionAdmin(admin.ModelAdmin):
 
 class WorldAdmin(admin.ModelAdmin):
     list_display = ('world_name', 'topic', 'is_custom_world', 'index',)
+    readonly_fields = ['is_custom_world']
 
 
 class LevelAdmin(admin.ModelAdmin):
