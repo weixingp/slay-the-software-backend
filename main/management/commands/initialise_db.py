@@ -192,11 +192,11 @@ class Command(BaseCommand):
         """
         sp_user = User.objects.get(username="junwei")
         if section.index == 4: # section 1 of World 2
-            csv_file = open("main/demo_files/section1.csv")
+            csv_file = open("main/demo_files/section1.csv", encoding="utf-8")
         elif section.index == 5:
-            csv_file = open("main/demo_files/section2.csv")
+            csv_file = open("main/demo_files/section2.csv", encoding="utf-8")
         elif section.index == 6:
-            csv_file = open("main/demo_files/section3.csv")
+            csv_file = open("main/demo_files/section3.csv", encoding="utf-8")
         else:
             self.stdout("Error occured when creating demo questions and answers")
             return
@@ -443,7 +443,7 @@ class Command(BaseCommand):
             Level.objects.create(section=section, level_name=level_name)
 
         # create 12 Questions
-        csv_file = open("main/demo_files/challenge.csv")
+        csv_file = open("main/demo_files/challenge.csv", encoding="utf-8")
         csv_file.readline() # get rid of header
         for line in csv_file:
             line = line.strip().split(",")
@@ -494,7 +494,7 @@ class Command(BaseCommand):
             Level.objects.create(section=section, level_name=level_name)
 
         # create 12 Questions
-        csv_file = open("main/demo_files/assignment.csv")
+        csv_file = open("main/demo_files/assignment.csv", encoding="utf-8")
         csv_file.readline()  # get rid of header
         for line in csv_file:
             line = line.strip().split(",")
