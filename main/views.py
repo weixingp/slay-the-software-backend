@@ -440,8 +440,7 @@ class CustomWorldDetails(APIView):
                 raise ParseError(detail="Custom World exists but not as part of an Assignment")
             elif custom_world_type == "challenge" and Assignment.objects.filter(custom_world=custom_world).exists():
                 raise ParseError(detail="Custom World exists but not as part of Challenge Mode")
-            else:
-                return CustomWorld.objects.get(access_code=access_code)
+            return CustomWorld.objects.get(access_code=access_code)
         except CustomWorld.DoesNotExist:
             raise NotFound(detail="Invalid access code specified")
 
@@ -452,11 +451,14 @@ class CustomWorldDetails(APIView):
         # if request is for assignment world, check if the assignment belongs to the user's class
         if custom_world_type == "assignment":
             # use id because only class ids can be extracted from a queryset
-            student_class_id = StudentProfile.objects.get(student=request.user).class_group.id
-            assignment_classes_ids = Assignment.objects.filter(custom_world=custom_world).values_list("class_group", flat=True)
-            if student_class_id not in assignment_classes_ids:
-                raise ParseError(detail="You do not have access to this Assignment")
-
+            student_class = StudentProfile.objects.get(student=request.user).class_group
+            try:
+                assignment = Assignment.objects.get(custom_world=custom_world, class_group=student_class)
+                assignment_deadline = assignment.deadline
+                if timezone.now() > assignment_deadline:
+                    raise ParseError(detail="The assignment has expired.")
+            except Assignment.DoesNotExist:
+                raise ParseError(detail="You do not have access to this assignment.")
         serializer = CustomWorldSerializer(custom_world)
         return Response(serializer.data)
 
