@@ -84,6 +84,10 @@ class QuestionAdmin(admin.ModelAdmin):
         if request.user in teachers:
             return {'difficulty': '1'}
 
+    def save_model(self, request, obj, form, change):
+        obj.created_by = request.user
+        obj.save()
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
