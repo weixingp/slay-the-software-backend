@@ -1,5 +1,5 @@
 from django.db.models import Sum, Avg
-from main.models import Section, Level, StudentProfile, Class, QuestionRecord, Question
+from main.models import Section, Level, StudentProfile, Class, QuestionRecord, Question, User
 
 
 def filter_question_records_by_class(class_name, question_records):
@@ -7,6 +7,11 @@ def filter_question_records_by_class(class_name, question_records):
     students = [student_profile.student for student_profile in
                 StudentProfile.objects.filter(class_group=class_group)]
     return question_records.filter(user__in=students)
+
+
+def remove_inactive_students(question_records):
+    active_students = User.objects.filter(is_staff=False, is_superuser=False, is_active=True)
+    return question_records.filter(user__in=active_students)
 
 
 def calculate_world_statistics(world, class_name=None):
@@ -22,6 +27,7 @@ def calculate_world_statistics(world, class_name=None):
         # calculate total and avg points
         levels = Level.objects.filter(section=section)
         question_records = QuestionRecord.objects.filter(level__in=levels)
+        question_records = remove_inactive_students(question_records)
 
         # retrieve stats of students in given class, if any
         if class_name:
@@ -39,6 +45,7 @@ def calculate_world_statistics(world, class_name=None):
         questions = Question.objects.filter(section=section)
         for question in questions:
             question_record = QuestionRecord.objects.filter(question=question)
+            question_record = remove_inactive_students(question_record)
 
             # retrieve stats of students in given class, if any
             if class_name:
