@@ -233,3 +233,7 @@ class StudentProfile(models.Model):
 
     def __str__(self):
         return self.student.first_name + " " + self.student.last_name + " (" + self.class_group.class_name + ")"
+
+    class Meta:
+        verbose_name = 'Student Profile'
+        verbose_name_plural = 'Student Profiles'

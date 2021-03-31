@@ -14,7 +14,6 @@ from rest_framework.authtoken.models import Token
 from .utils import import_users
 
 
-@admin.register(StudentProfile)
 class StudentProfileAdmin(admin.ModelAdmin):
     list_display = ('student', 'year_of_study', 'class_group', 'has_reset_password')
     list_filter = ('class_group',)
@@ -40,6 +39,7 @@ class UserAdmin(BaseUserAdmin):
         return qs.filter(id__in=student_ids)
 
 
+@admin.register(Assignment)
 class AssignmentAdmin(admin.ModelAdmin):
     class Media:
         # Adding fb sdk js to admin interface
@@ -67,6 +67,7 @@ class AnswerAdmin(admin.TabularInline):
         return 4
 
 
+@admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
     list_display = ('question', 'section', 'difficulty', 'created_by', 'date_created', 'date_modified',)
     list_filter = ('section', 'difficulty', 'created_by',)
@@ -91,6 +92,7 @@ class QuestionAdmin(admin.ModelAdmin):
         return qs.exclude(created_by__in=superusers)
 
 
+@admin.register(CustomWorld)
 class CustomWorldAdmin(admin.ModelAdmin):
     exclude = ['index',]
     readonly_fields = ['access_code']
@@ -112,15 +114,18 @@ class CustomWorldAdmin(admin.ModelAdmin):
             section.save()
 
 
+@admin.register(Section)
 class SectionAdmin(admin.ModelAdmin):
     list_display = ('sub_topic_name', 'index', 'world_id',)
 
 
+@admin.register(World)
 class WorldAdmin(admin.ModelAdmin):
     list_display = ('world_name', 'topic', 'is_custom_world', 'index',)
     readonly_fields = ['is_custom_world']
 
 
+@admin.register(Level)
 class LevelAdmin(admin.ModelAdmin):
     list_display = ('level_name', 'is_boss_level', 'is_final_boss_level', 'section_id',)
 
@@ -335,7 +340,7 @@ class CustomAdminSite(admin.AdminSite):
 
 custom_admin_site = CustomAdminSite()
 
-admin.site.unregister(User)
+# admin.site.unregister(User)
 custom_admin_site.register(User, UserAdmin)
 
 custom_admin_site.register(Token)
@@ -346,7 +351,4 @@ custom_admin_site.register(Section, SectionAdmin)
 custom_admin_site.register(World, WorldAdmin)
 custom_admin_site.register(Level, LevelAdmin)
 custom_admin_site.register(Group, GroupAdmin)
-# custom_admin_site.register(Answer, AnswerAdmin)
-# admin.site.register(Assignment, AssignmentAdmin)
-# admin.site.register(Question, QuestionAdmin)
-# admin.site.register(Answer, AnswerAdmin)
+custom_admin_site.register(StudentProfile, StudentProfileAdmin)
