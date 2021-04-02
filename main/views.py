@@ -604,3 +604,27 @@ def assignment_share_page(request):
 
     response = HttpResponse(template.render(context, request))
     return response
+
+
+def challenge_share_page(request):
+    template = loader.get_template('main/challenge_sharing.html')
+    code = request.GET.get("code")
+    world = None
+    if code:
+        try:
+            world = CustomWorld.objects.get(access_code=code)
+            assignments = Assignment.objects.filter(custom_world=world)
+            if not assignments:
+                world = None
+        except ObjectDoesNotExist:
+            world = None
+            assignments = None
+    else:
+        pass
+
+    context = {
+        "world": world,
+    }
+
+    response = HttpResponse(template.render(context, request))
+    return response

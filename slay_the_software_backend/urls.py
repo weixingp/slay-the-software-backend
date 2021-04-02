@@ -32,6 +32,7 @@ urlpatterns = [
     path('admin/', custom_admin_site.urls),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('share/', views.assignment_share_page),
+    path('share/challenge/', views.challenge_share_page),
 ]
 
 # API account url

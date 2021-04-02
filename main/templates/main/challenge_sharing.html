@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% if challenge %}
+        <title>"Join me at Slay the Software challenge | Access code: {{ world.access_code }}</title>
+        <meta name="description" content="Beat my high score if you can!"/>
+        <meta property="og:description" content="Beat my high score if you can!">
+        <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static "/img/cover-img-challenge.jpg" %}">
+        <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="628" />
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Join me at Slay the Software challenge | Access code: {{ world.access_code }}">
+        <meta name="twitter:description" content="Beat my high score if you can!">
+        <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static "/img/cover-img-challenge.jpg.jpg" %}">
+    {% else %}
+        <title>Challenge not found!</title>
+    {% endif %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container">
+        {% if challenge %}
+            <div class="section mt-3">
+            <div class="text-center">
+                <h1>Slay the Software Challenge</h1>
+                <h3>Code: <span class="text-danger">{{ world.access_code }}</span></h3>
+            </div>
+            <div class="row mt-2 text-center">
+                <h4>Join the Slay the Software Challenge now with access code: <b>{{ world.access_code }}</b></h4>
+            </div>
+        </div>
+        {% else %}
+            <div class="section mt-3">
+                <div class="text-center">
+                    <h1>Challenge Not Found!</h1>
+                    <h3>Please double check your access code.</h3>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
