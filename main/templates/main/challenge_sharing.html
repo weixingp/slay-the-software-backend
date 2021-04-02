@@ -14,7 +14,7 @@
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:title" content="Join me at Slay the Software challenge | Access code: {{ world.access_code }}">
         <meta name="twitter:description" content="Beat my high score if you can!">
-        <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static "/img/cover-img-challenge.jpg.jpg" %}">
+        <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static "/img/cover-img-challenge.jpg" %}">
     {% else %}
         <title>Challenge not found!</title>
     {% endif %}
