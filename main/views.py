@@ -614,11 +614,10 @@ def challenge_share_page(request):
         try:
             world = CustomWorld.objects.get(access_code=code)
             assignments = Assignment.objects.filter(custom_world=world)
-            if not assignments:
+            if assignments:
                 world = None
         except ObjectDoesNotExist:
             world = None
-            assignments = None
     else:
         pass
 
