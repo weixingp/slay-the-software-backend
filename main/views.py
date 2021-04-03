@@ -627,3 +627,38 @@ def challenge_share_page(request):
 
     response = HttpResponse(template.render(context, request))
     return response
+
+
+def high_score_share_page(request):
+    template = loader.get_template('main/highscore_sharing.html')
+    world_id = request.GET.get("wid")
+    player_id = request.GET.get("pid")
+
+    world = None
+    score = None
+    player = None
+    if player_id:
+        try:
+            player = User.objects.get(id=player_id)
+            gm = GameManager(player)
+
+            if not world_id:
+                worlds = World.objects.filter(is_custom_world=False)
+                score = 0
+                for world in worlds:
+                    score += gm.get_user_points_by_world(world)
+                world = World(world_name='Campaign Mode', topic='', is_custom_world=False, index="-1")
+            else:
+                world = World.objects.get(id=world_id)
+                score = gm.get_user_points_by_world(world)
+        except:
+            world = None
+
+    context = {
+        "world": world,
+        "score": score,
+        "player": player,
+    }
+
+    response = HttpResponse(template.render(context, request))
+    return response

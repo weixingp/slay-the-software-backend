@@ -33,6 +33,7 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('share/', views.assignment_share_page),
     path('share/challenge/', views.challenge_share_page),
+    path('share/highscore/', views.high_score_share_page),
 ]
 
 # API account url
