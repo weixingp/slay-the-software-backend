@@ -7,14 +7,14 @@
         <title>"Slay the Software: Beat the high score of {{ player.username }}({{ score }} pts) in {{ world.world_name }}</title>
         <meta name="description" content="Join the game now!"/>
         <meta property="og:description" content="Join the game now!">
-        <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static "/img/cover-img-challenge.jpg" %}">
+        <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static "/img/cover-img-highscore.jpg" %}">
         <meta property="og:image:type" content="image/jpeg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="628" />
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:title" content="Slay the Software: Beat the high score of {{ player.username }}({{ score }} pts) in {{ world.world_name }}">
         <meta name="twitter:description" content="Join the game now!">
-        <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static "/img/cover-img-challenge.jpg" %}">
+        <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static "/img/cover-img-highscore.jpg" %}">
     {% else %}
         <title>Challenge not found!</title>
     {% endif %}
