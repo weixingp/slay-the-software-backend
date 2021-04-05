@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     {% if world %}
-        <title>"Join me at Slay the Software challenge | Access code: {{ world.access_code }}</title>
+        <title>Join me at Slay the Software challenge | Access code: {{ world.access_code }}</title>
         <meta name="description" content="Beat my high score if you can!"/>
         <meta property="og:description" content="Beat my high score if you can!">
         <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static "/img/cover-img-challenge.jpg" %}">
