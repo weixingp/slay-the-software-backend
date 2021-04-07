@@ -11,7 +11,6 @@ class TestSetUp(APITestCase):
         """
         self.question_url = '/api/questions/'
         self.random_user1 = User.objects.create_user(username="tester1", password="tester123")
-        # user = User.objects.create_user(username="tester2", password="tester123")
         self.client.force_authenticate(user=self.random_user1)
 
         world = World.objects.create(
@@ -57,10 +56,3 @@ class TestSetUp(APITestCase):
             is_correct="False",
             question_id=question1.id
         )
-
-#        Question.objects.create(
-#            question="question2",
-#            section=section,
-#            difficulty="1",
-#            created_by_id="2"
-#        )

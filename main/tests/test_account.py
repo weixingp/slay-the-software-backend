@@ -61,6 +61,24 @@ class TestAccount(SetUp):
         has_token = True if res.data['token'] else False
         self.assertEqual(has_token, True)
 
+    def test_login_fail(self):
+        """
+        API: /api/account/login/
+        Test login invalid password
+        """
+
+        url = "/api/account/login/"
+        data = {
+            "username": self.username,
+            "password": "WRONG",
+        }
+        self.user.student_profile.has_reset_password = True
+        self.user.student_profile.save()
+
+        res = self.client.post(url, data=data, format="json")
+        # Status check
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_change_password_with_same_password(self):
         """
         API: /api/account/changepassword/

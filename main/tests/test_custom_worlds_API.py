@@ -5,6 +5,15 @@ from main.models import User, CustomWorld
 
 class TestCustomWorldsAPI(APITestCase):
     def setUp(self):
+
+        """
+        Creates random User and 1 Custom Worlds created by the random User
+        """
+        self.random = User.objects.create(username="random", password="testUserPw")
+        self.custom_world = CustomWorld.objects.create(world_name="Custom World Set Up 3", topic="Testing 3",
+                                                       is_custom_world=True, access_code="TEST02",
+                                                       created_by=self.random)
+
         """
         Creates a Student User and 2 Custom Worlds created by the same Student
         """
@@ -18,6 +27,18 @@ class TestCustomWorldsAPI(APITestCase):
                                                        created_by=self.student)
         self.custom_world_url = "/api/worlds/custom/"
 
+    def test_cannot_GET_custom_worlds_not_created_by_user(self):
+        """
+        API: "api/worlds/custom/"
+        Method: POST
+        Expected result: random User should only receive one custom world
+        """
+        self.client.force_authenticate(user=self.random)
+        response = self.client.get(self.custom_world_url, format="json")
+        response_json = response.json()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response_json), 1)
+
     def test_can_GET_custom_worlds(self):
         """
         API: "api/worlds/custom/"
@@ -28,6 +49,7 @@ class TestCustomWorldsAPI(APITestCase):
         response_json = response.json()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response_json), 2)
+
 
     def test_can_POST_custom_world(self):
         """
@@ -62,6 +84,18 @@ class TestCustomWorldsAPI(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response_json["access_code"], access_code)
         self.assertEqual(response_json["world_name"], "Custom World Set Up 1")
+
+    def test_cannot_GET_specific_custom_world_invalid_access_code(self):
+        """
+        API: "api/worlds/custom/:access_code/
+        Method: GET
+        Expected result: Error message "Invalid access code specified"
+        """
+        access_code = "WRONG" #invalid access_code
+        response = self.client.get(self.custom_world_url + access_code + "/", format="json")
+        response_json = response.json()
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response_json["detail"], "Invalid access code specified")
 
     def test_can_PUT_custom_world(self):
         """

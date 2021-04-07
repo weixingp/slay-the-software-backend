@@ -78,10 +78,6 @@ class TestViews(TestSetUp):
         response_json = response.json()
         self.assertEqual(response_json["id"], 1)  # get question id = 1
 
-#    def test_getSelectedCustomQuestion_fail_not_your_question(self):
-#        response = self.client.get("/api/questions/2/", format='json')
-#        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
     def test_deleteSelectedCustomQuestion_success(self):
         """
         API: api/questions/<int:pk>/
