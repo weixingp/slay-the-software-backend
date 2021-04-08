@@ -45,6 +45,9 @@ class GroupViewSet(viewsets.ModelViewSet):
 
 
 class LoginView(APIView):
+    """
+    API endpoint for login
+    """
     permission_classes = (permissions.AllowAny,)
     authentication_classes = (TokenAuthentication,)
 
@@ -71,6 +74,9 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
+    """
+    API endpoint for logout
+    """
     def get(self, request):
         user = request.user
         logout(request)
@@ -78,6 +84,9 @@ class LogoutView(APIView):
 
 
 class ChangePasswordView(APIView):
+    """
+    API endpoint to change password
+    """
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
@@ -111,6 +120,9 @@ class ChangePasswordView(APIView):
 
 
 class RegisterView(CreateAPIView):
+    """
+    API endpoint for registration
+    """
     serializer_class = UserSerializer
     permission_classes = (permissions.AllowAny,)
 
@@ -209,6 +221,9 @@ class LeaderboardView(APIView):
 
 
 class WorldView(APIView):
+    """
+    API endpoint to get all worlds
+    """
 
     def get(self, request):
         worlds = World.objects.filter(is_custom_world=False)
@@ -231,6 +246,9 @@ class WorldDetails(APIView):
 
 
 class UserScore(APIView):
+    """
+    API endpoint to get user current score
+    """
     def get(self, request):
         user = request.user
         gm = GameManager(user)
@@ -244,6 +262,9 @@ class UserScore(APIView):
 
 
 class QuestionDifficulty(APIView):
+    """
+    API endpoint to get question difficulty
+    """
     def get(self, request):
         user = request.user
         gm = GameManager(user)
@@ -267,6 +288,9 @@ class QuestionDifficulty(APIView):
 
 
 class QuestionView(APIView):
+    """
+    API endpoint to get question
+    """
     def get(self, request):
         user = request.user
         gm = GameManager(user)
@@ -294,6 +318,9 @@ class QuestionView(APIView):
 
 
 class CheckAnswerView(APIView):
+    """
+    API endpoint to check answer
+    """
     def post(self, request):
         user = request.user
         gm = GameManager(user)
@@ -495,6 +522,9 @@ class CustomWorldDetails(APIView):
 
 
 class GetPositionView(APIView):
+    """
+    API endpoint to get user current position in world
+    """
     def get(self, request):
         user = request.user
         gm = GameManager(user)
@@ -600,6 +630,9 @@ class AssignmentStatisticsView(APIView):
 
 
 def assignment_share_page(request):
+    """
+    HTML page to hold assignment sharing information
+    """
     template = loader.get_template('main/assignment_sharing.html')
     code = request.GET.get("code")
     assignments = None
@@ -624,6 +657,9 @@ def assignment_share_page(request):
 
 
 def challenge_share_page(request):
+    """
+    HTML page to hold challenge sharing information
+    """
     template = loader.get_template('main/challenge_sharing.html')
     code = request.GET.get("code")
     world = None
@@ -647,6 +683,9 @@ def challenge_share_page(request):
 
 
 def high_score_share_page(request):
+    """
+    HTML page to hold high score information
+    """
     template = loader.get_template('main/highscore_sharing.html')
     world_id = request.GET.get("wid")
     player_id = request.GET.get("pid")
