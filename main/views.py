@@ -1,25 +1,21 @@
 from django.conf.global_settings import AUTHENTICATION_BACKENDS
-from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.contrib.auth import  login, logout
 from django.contrib.auth.password_validation import validate_password
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.template import loader
 from django.utils import timezone
-from pytz import unicode
-from rest_framework import viewsets, authentication, exceptions
-from django.contrib.auth.models import User, Group
 from rest_framework import viewsets, permissions, status
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
-from rest_framework.decorators import api_view
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import CreateAPIView, RetrieveAPIView, UpdateAPIView
+from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.core.exceptions import ValidationError as DjangoValidationError
 from .helper import calculate_world_statistics
 from .models import *
-from django.db.models import Sum, Avg
+from django.db.models import Sum
 
 from main.serializers import *
 from main.permissions import IsOwnerOrReadOnly
@@ -142,18 +138,21 @@ class UserView(RetrieveAPIView):
 
 class LeaderboardView(APIView):
     """
-    API for viewing leaderboard
+    API for viewing leaderboard.
+    Requests handled: GET
     """
 
     def get(self, request):
         """
+        GET request handler.
         Retrieves leaderboard, filtered optionally by world_id, user_id, limit, and offset.
         For each student, their total points, first_name, last_name, and rank are returned.
-        :raises NotFound: if world_id is specified, and World with that world_id does not exist
-        :raises NotFound: if user_id is specified, and User with that user_id does not exist
-        :raises ParseError: if user_id is specified, and the user has not played in Campaign Mode yet or the user is not a Student
-        :raises ParseError: if offset is specified, but it is invalid
-        :raises ParseError: if limit is specified, but it is invalid
+
+        :raises: NotFound: if world_id is specified, and World with that world_id does not exist
+        :raises: NotFound: if user_id is specified, and User with that user_id does not exist
+        :raises: ParseError: if user_id is specified, and the user has not played in Campaign Mode yet or the user is not a Student
+        :raises: ParseError: if offset is specified, but it is invalid
+        :raises: ParseError: if limit is specified, but it is invalid
         """
         world_id = request.query_params.get("world_id")
         print(request.META)
@@ -222,24 +221,44 @@ class LeaderboardView(APIView):
 
 class WorldView(APIView):
     """
-    API endpoint to get all worlds
+    API endpoint to get all Worlds
+    Requests handled: GET
     """
 
     def get(self, request):
+        """
+        GET request handler
+        :return: Details of all World objects
+        """
         worlds = World.objects.filter(is_custom_world=False)
         serializer = WorldSerializer(worlds, many=True)
         return Response(serializer.data)
 
 
 class WorldDetails(APIView):
+    """
+    API endpoint to get details of specific World.
+    Requests handled: GET
+    """
 
     def get_object(self, id):
+        """
+        Method to retrieve a World object.
+        :param id: Id of World object to retrieve
+        :return: World if Id exists
+        :raises: NotFound if Id does not exist
+        """
         try:
             return World.objects.get(id=id)
         except World.DoesNotExist:
             raise NotFound("World with specified ID does not exist")
 
     def get(self, request, id):
+        """
+        GET request handler.
+        :param id: Id of World object to retrieve
+        :return: Details of World object with specified Id
+        """
         world = self.get_object(id)
         serializer = WorldSerializer(world)
         return Response(serializer.data)
@@ -353,10 +372,13 @@ class CheckAnswerView(APIView):
 class CustomQuestionView(APIView):
     """
     API for creating custom questions
+    Requests handled: GET, POST
     """
     def get(self, request):
         """
-        Gets custom questions the user has created
+        GET request handler. Accepts world_id as a query param for getting questions in the specified World id.
+        :return: Custom questions and answers the user has created
+        :raises: PermissionDenied if world_id specified and User is not the creator of the World.
         """
         questions = Question.objects.filter(created_by=request.user)
         world_id = request.query_params.get("world_id")
@@ -371,7 +393,8 @@ class CustomQuestionView(APIView):
 
     def post(self, request):
         """
-        Allow user to create custom questions
+        POST request handler.
+        :return: Details of Questions and Answers submitted by User.
         """
         serializer = CreateQuestionSerializer(data=request.data)
         if serializer.is_valid():
@@ -389,12 +412,16 @@ class CustomQuestionView(APIView):
 class CustomQuestionListView(APIView):
     """
     API to get specific user created question
+    Requests handled: GET, PUT, DELETE
     """
     permission_classes = [IsOwnerOrReadOnly]
 
     def get_object(self, pk):
         """
         Check if question with specific ID exists
+        :param pk: id of question to retrieve
+        :return: Question object if id exists
+        :raises: NotFound if id does not exist
         """
         try:
             return Question.objects.get(pk=pk)
@@ -403,7 +430,9 @@ class CustomQuestionListView(APIView):
 
     def get(self, request, pk):
         """
-        Get question with specific ID
+        GET request handler.
+        :param pk: id of question to retrieve
+        :return: details of question requested
         """
         question = self.get_object(pk)
         serializer = CreateQuestionSerializer(question)
@@ -417,7 +446,9 @@ class CustomQuestionListView(APIView):
 
     def put(self, request, pk):
         """
-        Edit question with specific ID
+        PUT request handler.
+        :param pk: id of question to edit
+        :return: details of question edited
         """
         question = self.get_object(pk)
         serializer = EditQuestionSerializer(question, data=request.data, partial=True)
@@ -428,7 +459,8 @@ class CustomQuestionListView(APIView):
 
     def delete(self, request, pk):
         """
-        Delete question with specific ID
+        DELETE request handler
+        :param pk: id of question to edit
         """
         question = self.get_object(pk)
         question.delete()
@@ -436,17 +468,36 @@ class CustomQuestionListView(APIView):
 
 
 class CustomWorldView(APIView):
+    """
+    API endpoint for retrieving all Custom Worlds created by the User and for creating Custom Worlds
+    Requests handled: GET, POST
+    """
 
     def get_user(self, id):
+        """
+        Method to get the User's User object
+        :param id: id of User
+        :return: User object
+        """
         return User.objects.get(id=id)
 
     def get(self, request):
+        """
+        GET request handler.
+        :return: details of Custom Worlds created by the User
+        """
         user = self.get_user(request.user.id)
         user_custom_worlds = CustomWorld.objects.filter(created_by=user)
         serializer = CustomWorldSerializer(user_custom_worlds, many=True)
         return Response(serializer.data)
 
     def post(self, request):
+        """
+        POST request handler.
+        - Generates a unique access code for the Custom World.
+        - Generates 1 Section and 4 Levels together with the created Custom World
+        :return: details of Custom World entered by the User
+        """
         data = request.data
         print(data)
         data["created_by"] = self.get_user(request.user.id).id
@@ -474,9 +525,22 @@ class CustomWorldView(APIView):
 
 
 class CustomWorldDetails(APIView):
+    """
+    API endpoint for handling user-specified Custom World.
+    Requests handled: GET, PUT, DELETE
+    """
     permission_classes = [IsOwnerOrReadOnly]
 
     def get_custom_world(self, access_code, custom_world_type=None):
+        """
+        Method to retrieve a Custom World
+        :param access_code: access code of Custom World to retrieve
+        :param custom_world_type: optional. Accepts the exact strings 'assignment' and 'challenge'
+        :return: Custom World object
+        :raise: ParseError if custom_world_type is 'assignment' but access_code points to a non-assignment Custom World
+        :raise: ParseError if custom_world_type is 'challenge' but access_code points to an assignment Custom World
+        :raise: NotFound if invalid access code is specified
+        """
         try:
             custom_world = CustomWorld.objects.get(access_code=access_code)
             if custom_world_type == "assignment" and not Assignment.objects.filter(custom_world=custom_world).exists():
@@ -488,6 +552,14 @@ class CustomWorldDetails(APIView):
             raise NotFound(detail="Invalid access code specified")
 
     def get(self, request, access_code):
+        """
+        GET request handler. Accepts type as query params. type accepts the exact strings 'assignment' and 'challenge'
+        - if type is 'assignment', this method will check if the Assignment associated with the Custom World has expired
+         or if the requesting User is allowed to access the Assignment
+        :param access_code: access code of Custom World to retrieve
+        :return: details of the specified Custom World
+        :raises: ParseError if the Assignment has expired or the requesting User does not have access to the Assignment
+        """
         custom_world_type = request.query_params.get("type")
         custom_world = self.get_custom_world(access_code, custom_world_type)
 
@@ -506,6 +578,11 @@ class CustomWorldDetails(APIView):
         return Response(serializer.data)
 
     def put(self, request, access_code):
+        """
+        PUT request handler
+        :param access_code: access code of Custom World to edit
+        :return: details of edited Custom World
+        """
         custom_world_type = request.query_params.get("type")
         custom_world = self.get_custom_world(access_code, custom_world_type)
         serializer = CustomWorldSerializer(custom_world, data=request.data, partial=True)
@@ -515,6 +592,10 @@ class CustomWorldDetails(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, access_code):
+        """
+        DELETE request handler
+        :param access_code: access code of Custom World to delete
+        """
         custom_world_type = request.query_params.get("type")
         custom_world = self.get_custom_world(access_code, custom_world_type)
         custom_world.delete()
@@ -546,6 +627,10 @@ class GetPositionView(APIView):
 
 
 class CampaignStatisticsView(APIView):
+    """
+    API endpoint for retrieving Campaign Mode statistics
+    """
+
     def get(self, request):
         """
         Retrieves the following statistics:
@@ -581,6 +666,7 @@ class AssignmentStatisticsView(APIView):
     and for each Question, the number of times it was answered correctly and incorrectly
     - If a Class name was specified, return the above statistics but only specific to that Class
     """
+
     def get(self, request):
         access_code = request.query_params.get("access_code")
         class_name = request.query_params.get("class")
