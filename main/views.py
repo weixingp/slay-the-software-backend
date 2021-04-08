@@ -1,5 +1,6 @@
 from django.conf.global_settings import AUTHENTICATION_BACKENDS
 from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.contrib.auth.password_validation import validate_password
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.template import loader
@@ -15,7 +16,7 @@ from rest_framework.generics import CreateAPIView, RetrieveAPIView, UpdateAPIVie
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
-
+from django.core.exceptions import ValidationError as DjangoValidationError
 from .helper import calculate_world_statistics
 from .models import *
 from django.db.models import Sum, Avg
@@ -83,8 +84,24 @@ class ChangePasswordView(APIView):
         serializer = ChangePasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
-        if request.data['password'] == request.data['new_password']:
-            raise ValidationError(detail="New password can't be the same as old password.")
+
+        # Password validation
+        old = request.data['password']
+        new = request.data['new_password']
+
+        if old == new:
+            res = {
+                "detail": ["New password can't be the same as old password.", ]
+            }
+            raise ValidationError(res)
+
+        try:
+            validate_password(password=new, user=user,)
+        except DjangoValidationError as ex:
+            res = {
+                "detail": ex
+            }
+            return Response(res, status=status.HTTP_400_BAD_REQUEST)
 
         user.set_password(request.data['new_password'])
         user.save()
