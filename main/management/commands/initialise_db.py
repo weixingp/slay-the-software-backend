@@ -14,6 +14,10 @@ points_map = {
 }
 
 class Command(BaseCommand):
+    """
+    Script to auto populate database with test values.
+    Data created can also be found in a separate spreadsheet.
+    """
     help = 'Initialises the database. Make sure to run "python manage.py flush" first.'
 
     def __init__(self):
@@ -38,6 +42,9 @@ class Command(BaseCommand):
         self.__simulate_demo_steve()
 
     def __create_superusers(self):
+        """
+        Method to create 4 superusers
+        """
         self.stdout.write("Creating superusers...")
         User.objects.create_superuser(username="admin", password="admin123")
         User.objects.create_superuser(username="weixing", password="weixing123")
@@ -79,7 +86,7 @@ class Command(BaseCommand):
 
     def __create_students(self):
         '''
-        Creates 8 Students
+        Creates Students for testing
         '''
         self.stdout.write("Creating students...")
         students = [
@@ -134,6 +141,11 @@ class Command(BaseCommand):
         self.stdout.write("...all data for Campaign Mode created")
 
     def __create_section(self, world, sub_topic_name, index, has_final_boss):
+        """
+        Sub-function to create a section for the specified world. 3 Levels are then created.
+        Calls a separate function to create questions for the created section.
+        Sections in World 2 are populated with real questions, while the rest are populated with default values.
+        """
         self.stdout.write("\t...creating section %s" % index)
         section = Section.objects.create(world=world, sub_topic_name=sub_topic_name, index=index)
 
@@ -181,6 +193,11 @@ class Command(BaseCommand):
             self.__create_answers_for_questions(q3)
 
     def __create_answers_for_questions(self, question):
+        """
+        4 answers are created per question. All option 4s are set as the correct answer.
+        :param question:
+        :return:
+        """
         Answer.objects.create(question=question, answer="Answer 1")
         Answer.objects.create(question=question, answer="Answer 2")
         Answer.objects.create(question=question, answer="Answer 3")
@@ -237,6 +254,10 @@ class Command(BaseCommand):
         csv_file.close()
 
     def __simulate_students_campaign_mode(self):
+        """
+        Simulates students' playthrough in Campaign Mode. Uses GameManager.
+        :return:
+        """
         self.stdout.write("Simulating students' playthrough in Campaign Mode...")
         student_records = [
             {"username": "josh", "worlds_finished": 1, "current_section": 3, "current_level": 1, "completed_mode": False},
@@ -280,9 +301,11 @@ class Command(BaseCommand):
 
         self.stdout.write("...finished simulating")
 
-    # for use in __simulate_students_campaign_mode, __simulate_challenge_mode_playthroughs,
-    # and __simulate_assignment_playthroughs
     def __simulate_answering_questions(self, gm, position, world=None):
+        """
+        For use in __simulate_students_campaign_mode, __simulate_challenge_mode_playthroughs, and __simulate_assignment_playthroughs.
+        Simulates a Student answering a question.
+        """
         self.stdout.write("\t...current Level: %s" % position.id)
         questions, session_stats = gm.get_questions(position.section.world)
         question_answer_set = []
@@ -378,6 +401,9 @@ class Command(BaseCommand):
         self.stdout.write("...assignments created")
 
     def __simulate_challenge_mode_playthroughs(self):
+        """
+        Simulates some students playing through Challenge Mode
+        """
         play_records = [
             {"username": "josh", "user_world": "shenrui"},
             {"username": "shenrui", "user_world": "wanqian"},
@@ -429,6 +455,9 @@ class Command(BaseCommand):
         self.stdout.write("...finished simulating")
 
     def __create_demo_challenge_mode(self):
+        """
+        Creates a Challenge Mode using data from a CSV file
+        """
         self.stdout.write("Creating demo Challenge World...")
         student = User.objects.get(username="bob")
 
@@ -479,6 +508,9 @@ class Command(BaseCommand):
         csv_file.close()
 
     def __create_demo_assignment(self):
+        """
+        Creates Assignment using data from a CSV file
+        """
         self.stdout.write("Creating demo Assignment World...")
         teacher = User.objects.get(username="nicole")
 

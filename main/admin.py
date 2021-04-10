@@ -83,6 +83,9 @@ class QuestionAdmin(admin.ModelAdmin):
     search_fields = ('question', 'section')
 
     def get_changeform_initial_data(self, request):
+        """
+        If a question is created by a Teacher, auto-set difficulty to 1 (Easy)
+        """
         teachers = User.objects.filter(is_staff=True, is_superuser=False)
         if request.user in teachers:
             return {'difficulty': '1'}
@@ -92,6 +95,9 @@ class QuestionAdmin(admin.ModelAdmin):
         obj.save()
 
     def get_queryset(self, request):
+        """
+        Removes Campaign World questions from being viewable by Teachers
+        """
         qs = super().get_queryset(request)
         if request.user.is_superuser:
             return qs
@@ -109,6 +115,9 @@ class CustomWorldAdmin(admin.ModelAdmin):
         return {'is_custom_world': True, 'created_by': request.user}
 
     def save_model(self, request, obj, form, change):
+        """
+        Auto generates 1 Section and 4 Levels for the created Custom World
+        """
         obj.save()
         if not Section.objects.filter(world=obj).exists():
             section = Section.objects.create(world=obj, sub_topic_name=obj.world_name)

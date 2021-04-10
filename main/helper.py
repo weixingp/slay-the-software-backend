@@ -3,6 +3,9 @@ from main.models import Section, Level, StudentProfile, Class, QuestionRecord, Q
 
 
 def filter_question_records_by_class(class_name, question_records):
+    """
+    Function to filter question records by a specified class
+    """
     class_group = Class.objects.get(class_name=class_name)
     students = [student_profile.student for student_profile in
                 StudentProfile.objects.filter(class_group=class_group)]
@@ -10,6 +13,9 @@ def filter_question_records_by_class(class_name, question_records):
 
 
 def remove_inactive_students(question_records):
+    """
+    Function to remove records belonging to an inactive Student
+    """
     active_students = User.objects.filter(is_staff=False, is_superuser=False, is_active=True)
     return question_records.filter(user__in=active_students)
 
