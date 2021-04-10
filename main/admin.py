@@ -19,6 +19,13 @@ class StudentProfileAdmin(admin.ModelAdmin):
     list_filter = ('class_group',)
     search_fields = ('student__email', 'student__username',)
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser:
+            return qs
+        teacher_class = Class.objects.filter(teacher=request.user)
+        return qs.filter(class_group__in=teacher_class)
+
 
 class ProfileInline(admin.StackedInline):
     model = StudentProfile
