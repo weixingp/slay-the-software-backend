@@ -30,7 +30,7 @@ class TestCustomWorldsAPI(APITestCase):
     def test_cannot_GET_custom_worlds_not_created_by_user(self):
         """
         API: "api/worlds/custom/"
-        Method: POST
+        Method: GET
         Expected result: random User should only receive one custom world
         """
         self.client.force_authenticate(user=self.random)
@@ -42,7 +42,7 @@ class TestCustomWorldsAPI(APITestCase):
     def test_can_GET_custom_worlds(self):
         """
         API: "api/worlds/custom/"
-        Method: POST
+        Method: GET
         Expected result: Should receive two custom worlds
         """
         response = self.client.get(self.custom_world_url, format="json")
@@ -74,7 +74,7 @@ class TestCustomWorldsAPI(APITestCase):
 
     def test_can_GET_specific_custom_world(self):
         """
-        API: "api/worlds/custom/:access_code/
+        API: "api/worlds/custom/:access_code/"
         Method: GET
         Expected result: Correct Custom World returned
         """

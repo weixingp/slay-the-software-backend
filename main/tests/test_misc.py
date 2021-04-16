@@ -101,7 +101,7 @@ class TestMisc(FullSetUp):
         """
         API: /api/position/
         Test get position when user reached the last level and level
-        uncompleted.
+        completed.
         """
 
         level = Level.objects.get(id=self.total_levels)
