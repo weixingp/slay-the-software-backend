@@ -33,6 +33,9 @@ class MatriculationField(CharField):
 
 # Create your models here.
 class World(models.Model):
+    """
+    Represents a World in Campaign Mode.
+    """
     world_name = models.CharField(max_length=64)
     topic = models.CharField(max_length=64)
     is_custom_world = models.BooleanField(default=False)
@@ -46,6 +49,9 @@ class World(models.Model):
 
 
 class Section(models.Model):
+    """
+    Represents a Section in a World and Custom World. Related to :model:`main.World`.
+    """
     world = models.ForeignKey(World, on_delete=models.CASCADE, related_name="sections")
     sub_topic_name = models.CharField(max_length=30)
     index = models.IntegerField(unique=True, null=True, default=None)
@@ -58,6 +64,9 @@ class Section(models.Model):
 
 
 class Question(models.Model):
+    """
+    Represents a Question to be asked to the User. Related to :model:`main.Section` and :model:`auth.User`.
+    """
     question = models.TextField(max_length=1000)
     section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="questions", blank=True, null=True)
     DIFFICULTY_CHOICES = (
@@ -68,6 +77,7 @@ class Question(models.Model):
     difficulty = models.CharField(
         max_length=1,
         choices=DIFFICULTY_CHOICES,
+        help_text="1 (easy), 2 (normal), 3 (hard)"
     )
 
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_questions", blank=True,
@@ -81,6 +91,9 @@ class Question(models.Model):
 
 
 class Answer(models.Model):
+    """
+    Represents an Answer to a Question. Related to :model:`main.Question`.
+    """
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answers")
     answer = models.CharField(max_length=256)
     is_correct = models.BooleanField(default=False)
@@ -100,6 +113,10 @@ def generate_access_code():
 
 
 class CustomWorld(World):
+    """
+    Represents a Custom World for Challenge Mode and Assignment. Inherits from :model:`main.World`.
+    Related to :model:`auth.User`.
+    """
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="custom_worlds")
     access_code = models.CharField(max_length=6, unique=True, default=generate_access_code)
     is_active = models.BooleanField(default=True)
@@ -117,6 +134,9 @@ class CustomWorld(World):
 
 
 class Class(models.Model):
+    """
+    Represents a Class that Students belong to and which is taught by a single Teacher. Related to :model:`auth.User`.
+    """
     teacher = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="classes")
     class_name = models.CharField(max_length=30)
 
@@ -125,6 +145,9 @@ class Class(models.Model):
 
 
 class Assignment(models.Model):
+    """
+    Represents an Assignment to be assigned to a Class. Related to :model:`main.CustomWorld` and :model:`main.Class`.
+    """
     custom_world = models.ForeignKey(CustomWorld, on_delete=models.CASCADE)
     class_group = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="assignments")
     name = models.CharField(max_length=30)
@@ -183,6 +206,9 @@ class Assignment(models.Model):
 
 
 class Level(models.Model):
+    """
+    Represents a Level (either Standard or Boss) in a Section. Related to :model:`main.Section`.
+    """
     section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="levels")
     level_name = models.CharField(max_length=64)
     is_boss_level = models.BooleanField(default=False)
@@ -198,6 +224,10 @@ class Level(models.Model):
 
 # Points system migrated to UserLevelProgressRecord
 class QuestionRecord(models.Model):
+    """
+    Represents a record of details relating to a Question answered by a Student in a Level.
+    Related to :model:`auth.User`, :model:`main.Question`, and :model:`main.Level`.
+    """
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_question_records")
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="question_records")
     level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="level_question_records")
@@ -213,6 +243,9 @@ class QuestionRecord(models.Model):
 
 
 class UserLevelProgressRecord(models.Model):
+    """
+    Represents a User's history of Levels cleared / current Level position. Related to :model:`auth.User`, :model:`main.Level`.
+    """
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="level_progress_record")
     level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name="user_progress_record")
     is_completed = models.BooleanField(default=False)
@@ -226,6 +259,9 @@ class UserLevelProgressRecord(models.Model):
 
 
 class StudentProfile(models.Model):
+    """
+    Represents a Student's profile. Related to :model:`auth.User` and :model:`main.Class`.
+    """
     student = models.OneToOneField(User, on_delete=models.CASCADE, related_name="student_profile")
     year_of_study = models.IntegerField()
     class_group = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, related_name="students")

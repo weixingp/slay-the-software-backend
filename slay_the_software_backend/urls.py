@@ -29,6 +29,7 @@ router.register(r'groups', views.GroupViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     #path('admin/', admin.site.urls),
+    path('admin/doc/', include('django.contrib.admindocs.urls')),
     path('admin/', custom_admin_site.urls),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('share/', views.assignment_share_page),
